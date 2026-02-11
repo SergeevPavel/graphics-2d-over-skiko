@@ -4,6 +4,7 @@ package org.example
 import org.jetbrains.skia.ColorSpace
 import sun.java2d.SunGraphics2D
 import sun.java2d.SurfaceData
+import sun.java2d.metal.MTLSurfaceData
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -41,31 +42,37 @@ fun withSkiaCanvas(
 ) {
     g2d.runExternal(object : RenderingTask {
         override fun run(surfaceType: String?, pointers: List<Long>, names: List<String?>) {
-            val device = pointers[RenderingTask.MTL_DEVICE_ARG_INDEX]
-            val queue = pointers[RenderingTask.MTL_COMMAND_QUEUE_ARG_INDEX]
-            val texture = pointers[RenderingTask.MTL_TEXTURE_ARG_INDEX]
-            if (device == 0L || queue == 0L || texture == 0L) return
+            try {
+                val device = pointers[RenderingTask.MTL_DEVICE_ARG_INDEX]
+                val queue = pointers[RenderingTask.MTL_COMMAND_QUEUE_ARG_INDEX]
+                val texture = pointers[RenderingTask.MTL_TEXTURE_ARG_INDEX]
+                if (device == 0L || queue == 0L || texture == 0L) return
 
-            val gc = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
-            val scale = gc.defaultTransform.scaleX.toFloat()
+                val gc = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
+                val scale = gc.defaultTransform.scaleX.toFloat()
 
-            org.jetbrains.skia.DirectContext.makeMetal(device, queue).use { grCtx ->
-                g2d as SunGraphics2D
-                val textureWidth = 640 * 2 // g2d.surfaceData.bounds.width
-                val textureHeight = 400 * 2 // g2d.surfaceData.bounds.height
-                org.jetbrains.skia.BackendRenderTarget.makeMetal(textureWidth, textureHeight, texture).use { backendRT ->
-                    org.jetbrains.skia.Surface.makeFromBackendRenderTarget(
-                        grCtx,
-                        backendRT,
-                        org.jetbrains.skia.SurfaceOrigin.TOP_LEFT,
-                        org.jetbrains.skia.SurfaceColorFormat.BGRA_8888,
-                        colorSpace = ColorSpace.sRGB,
-                        null
-                    )?.use { surface ->
-                        block(surface.canvas, grCtx, scale)
-                        grCtx.flushAndSubmit(surface)
+                org.jetbrains.skia.DirectContext.makeMetal(device, queue).use { grCtx ->
+                    val sd = ((g2d as SunGraphics2D).surfaceData as MTLSurfaceData)
+//                    println("nativeWidth=${sd.nativeWidth} nativeHeight=${sd.nativeHeight}")
+//                    println("height=${sd.height} width=${sd.width}")
+                    val textureWidth = sd.nativeWidth
+                    val textureHeight = sd.nativeHeight
+                    org.jetbrains.skia.BackendRenderTarget.makeMetal(textureWidth, textureHeight, texture).use { backendRT ->
+                        org.jetbrains.skia.Surface.makeFromBackendRenderTarget(
+                            grCtx,
+                            backendRT,
+                            org.jetbrains.skia.SurfaceOrigin.TOP_LEFT,
+                            org.jetbrains.skia.SurfaceColorFormat.BGRA_8888,
+                            colorSpace = ColorSpace.sRGB,
+                            null
+                        )?.use { surface ->
+                            block(surface.canvas, grCtx, scale)
+                            grCtx.flushAndSubmit(surface)
+                        }
                     }
                 }
+            } catch (e: Throwable) {
+                println(e)
             }
         }
     })

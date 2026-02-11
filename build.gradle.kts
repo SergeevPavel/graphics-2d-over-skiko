@@ -43,6 +43,7 @@ tasks.withType<JavaExec> {
         "--add-exports", "java.desktop/java.awt.dnd.peer=ALL-UNNAMED",
         "--add-exports", "java.desktop/sun.lwawt=ALL-UNNAMED",
         "--add-exports", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED",
+        "--add-exports", "java.desktop/sun.java2d.metal=ALL-UNNAMED",
         "--add-opens", "java.desktop/java.awt=ALL-UNNAMED",
         "--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED"
     )
