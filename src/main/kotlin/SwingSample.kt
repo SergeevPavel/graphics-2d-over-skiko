@@ -15,8 +15,10 @@ import java.awt.Rectangle
 import java.awt.RenderingHints
 import java.awt.RenderingTask
 import java.awt.Window
+import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JFrame
+import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.RepaintManager
 import javax.swing.SwingUtilities
@@ -49,8 +51,8 @@ fun withSkiaCanvas(
 
             org.jetbrains.skia.DirectContext.makeMetal(device, queue).use { grCtx ->
                 g2d as SunGraphics2D
-                val textureWidth = 400 * 2 // g2d.surfaceData.bounds.width
-                val textureHeight = 200 * 2 // g2d.surfaceData.bounds.height
+                val textureWidth = 640 * 2 // g2d.surfaceData.bounds.width
+                val textureHeight = 400 * 2 // g2d.surfaceData.bounds.height
                 org.jetbrains.skia.BackendRenderTarget.makeMetal(textureWidth, textureHeight, texture).use { backendRT ->
                     org.jetbrains.skia.Surface.makeFromBackendRenderTarget(
                         grCtx,
@@ -75,7 +77,8 @@ fun swingSample() {
         val frame = JFrame("Graphics2D over Skiko").apply {
             overrideGraphics2D { surfaceData, fg, bg, font ->
                 val gr = SunGraphics2D(surfaceData, fg, bg, font)
-                LoggingGraphics2D(delegate = gr, "LoggingGraphics2D[${counter++}]")
+//                LoggingGraphics2D(delegate = gr, "LoggingGraphics2D[${counter++}]")
+                gr
             }
             RepaintManager.currentManager(this)?.setDoubleBufferingEnabled(false)
             defaultCloseOperation = JFrame.EXIT_ON_CLOSE
@@ -94,23 +97,23 @@ fun createUiPanel(): JPanel {
         bounds = Rectangle(0, 0, 400, 200)
     }
 
-//    val label = JLabel("Ready")
-//    val btnHello = JButton("Say Hello").apply {
-//        addActionListener { label.text = "Hello, World!" }
-//    }
-//    val btnReset = JButton("Reset").apply {
-//        addActionListener {
-//            println("Button was pressed!!!")
-//            label.text = "Ready"
-//        }
-//    }
-//
-//    val swingSpinner = swingSpinner()
+    val label = JLabel("Ready")
+    val btnHello = JButton("Say Hello").apply {
+        addActionListener { label.text = "Hello, World!" }
+    }
+    val btnReset = JButton("Reset").apply {
+        addActionListener {
+            println("Button was pressed!!!")
+            label.text = "Ready"
+        }
+    }
 
-//    uiPanel.add(btnHello)
-//    uiPanel.add(btnReset)
-//    uiPanel.add(label)
-//    uiPanel.add(swingSpinner)
+    val swingSpinner = swingSpinner()
+
+    uiPanel.add(btnHello)
+    uiPanel.add(btnReset)
+    uiPanel.add(label)
+    uiPanel.add(swingSpinner)
     uiPanel.add(skikoSpinner())
     return uiPanel
 }
@@ -154,16 +157,16 @@ fun skikoSpinner(): JComponent {
             }.start()
         }
         override fun paintComponent(g: Graphics) {
-            val g2 = (g as LoggingGraphics2D).delegate
-//            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            withSkiaCanvas(g2) { canvas, _, _ ->
-                canvas.clear(org.jetbrains.skia.Color.MAGENTA)
+            val g2 = when {
+                g is LoggingGraphics2D -> g.delegate
+                g is SunGraphics2D -> g
+                else -> TODO("Isn't possible")
+            }
 
-//                val paint = org.jetbrains.skia.Paint().apply {
-//                    color = 0xff00ff00.toInt()
-//                }
-////                canvas.drawCircle(200f, 200f, 100f, paint)
-//                canvas.drawRect(200f, 200f, 100f, 100f, paint)
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            withSkiaCanvas(g2) { canvas, _, _ ->
+                // Clearing the canvas destroys all content
+                //  canvas.clear(org.jetbrains.skia.Color.TRANSPARENT)
 
                 val cx = 200 //width / 2f + 50f
                 val cy = 200 //height / 2f + 50f

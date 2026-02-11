@@ -52,6 +52,7 @@ object SkiaTextureDemo {
             g2.font = Font("SansSerif", Font.PLAIN, 24)
             g2.drawString("The text is rendered via Java2D(before skia)", 18, 36)
 
+            println("width=$width height=$height")
             withSkiaCanvas(g2) { canvas, _, scale ->
                 drawSkiaDemo(canvas, width, height, scale)
             }
