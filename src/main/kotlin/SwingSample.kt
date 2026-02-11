@@ -1,6 +1,7 @@
 @file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
 package org.example
 
+import graphics2d.SkikoGraphics2D
 import org.jetbrains.skia.ColorSpace
 import sun.java2d.SunGraphics2D
 import sun.java2d.SurfaceData
@@ -83,9 +84,19 @@ fun swingSample() {
     SwingUtilities.invokeLater {
         val frame = JFrame("Graphics2D over Skiko").apply {
             overrideGraphics2D { surfaceData, fg, bg, font ->
-                val gr = SunGraphics2D(surfaceData, fg, bg, font)
+                val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
+                val skikoGraphics2D = SkikoGraphics2D { picture ->
+                    withSkiaCanvas(sunGraphics2D) { canvas, _, _ ->
+                        canvas.drawPicture(picture)
+                    }
+                }
+                skikoGraphics2D.color = fg
+                skikoGraphics2D.background = bg
+                skikoGraphics2D.paint = fg
+                skikoGraphics2D.font = font
+                skikoGraphics2D
 //                LoggingGraphics2D(delegate = gr, "LoggingGraphics2D[${counter++}]")
-                gr
+
             }
             RepaintManager.currentManager(this)?.setDoubleBufferingEnabled(false)
             defaultCloseOperation = JFrame.EXIT_ON_CLOSE
@@ -121,7 +132,7 @@ fun createUiPanel(): JPanel {
     uiPanel.add(btnReset)
     uiPanel.add(label)
     uiPanel.add(swingSpinner)
-    uiPanel.add(skikoSpinner())
+//    uiPanel.add(skikoSpinner())
     return uiPanel
 }
 
