@@ -66,7 +66,11 @@ fun withSkiaCanvas(
     })
 }
 
-fun JFrame.makeUseSkikoGraphics1() {
+fun JFrame.makeUseSkikoGraphics() {
+    makeUseSkikoGraphics2WithSurface()
+}
+
+fun JFrame.makeUseSkikoGraphics1WithPicture() {
     overrideGraphics2D { surfaceData, fg, bg, font ->
         val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
         (surfaceData as? MTLSurfaceData)?.let {
@@ -91,32 +95,18 @@ fun JFrame.makeUseSkikoGraphics1() {
         skikoGraphics2D.font = font
         skikoGraphics2D
     }
-//    disableDoubleBuffering()
+    disableDoubleBuffering()
 }
 
-fun JFrame.makeUseSkikoGraphics2() {
+fun JFrame.makeUseSkikoGraphics2WithSurface() {
     overrideGraphics2D { surfaceData, fg, bg, font ->
         val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
         (surfaceData as? MTLSurfaceData)?.let {
-            //        SkiaGraphics2D()
-
-//        { picture ->
-//            withSkiaCanvas(sunGraphics2D) { canvas, _, _ ->
-//                canvas.clear(org.jetbrains.skia.Color.MAGENTA)
-//                canvas.translate(0f, 32f * 2) // titlebar
-//                canvas.drawPicture(picture)
-//            }
-//        }
-
             val skikoGraphics2D = SkiaGraphics2D(surfaceData.width, surfaceData.height)
             skikoGraphics2D.onDispose = {
-                withSkiaCanvas(sunGraphics2D) { canvas, width, height ->
-                    canvas.clear(org.jetbrains.skia.Color.MAGENTA)
-                    canvas.translate(0f, 32f * 2) // titlebar
-                    canvas.translate(x.toFloat() * 2f, y.toFloat() * 2f)
+                withSkiaCanvas(sunGraphics2D) { canvas, directContext, scale ->
                     skikoGraphics2D.getSurface()
                     canvas.drawImage(skikoGraphics2D.getSurface().makeImageSnapshot(), 0f, 0f)
-//                    canvas.drawPicture(picture)
                 }
             }
             skikoGraphics2D.transform(sunGraphics2D.transform)

@@ -1435,8 +1435,8 @@ class SkiaGraphics2D : Graphics2D {
      * @param dy  the delta y.
      */
     override fun copyArea(x: Int, y: Int, width: Int, height: Int, dx: Int, dy: Int) {
-        Logger.debug { "copyArea($x, $y, $width, $height, $dx, $dy) - NOT IMPLEMENTED" }
         // FIXME: implement this, low priority
+        Logger.error { "copyArea($x, $y, $width, $height, $dx, $dy) - NOT IMPLEMENTED" }
     }
 
     /**

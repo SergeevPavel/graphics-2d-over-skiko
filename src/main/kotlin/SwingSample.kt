@@ -1,7 +1,7 @@
 @file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
 package org.example
 
-import org.example.graphics2d.makeUseSkikoGraphics1
+import org.example.graphics2d.makeUseSkikoGraphics
 import java.awt.*
 import javax.swing.*
 import kotlin.math.PI
@@ -11,8 +11,7 @@ import kotlin.math.sin
 fun swingSample() {
     SwingUtilities.invokeLater {
         val frame = JFrame("Graphics2D over Skiko").apply {
-            makeUseSkikoGraphics1()
-//            makeUseLoggingGraphics()
+            makeUseSkikoGraphics()
             defaultCloseOperation = JFrame.EXIT_ON_CLOSE
             setSize(400, 200)
             contentPane.add(createUiPanel())
