@@ -34,6 +34,7 @@
  */
 package org.jfree.skija
 
+import dispatchIfNeeded
 import graphics2d.SkikoGraphicsConfiguration
 import org.jetbrains.skia.BlendMode
 import org.jetbrains.skia.Canvas
@@ -1986,12 +1987,17 @@ class SkiaGraphics2D : Graphics2D {
         return drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, observer)
     }
 
+    public var onDispose = {}
+
     /**
      * This method does nothing.
      */
     override fun dispose() {
         Logger.debug { "dispose()" }
-        this.canvas!!.restoreToCount(this.restoreCount)
+        dispatchIfNeeded { // Might be called from Finalized thread
+            this.canvas!!.restoreToCount(this.restoreCount)
+            onDispose()
+        }
     }
 
     private fun _createTransformedShape(s: Shape, clone: Boolean): Shape {
@@ -2025,6 +2031,15 @@ class SkiaGraphics2D : Graphics2D {
         }
         return Path2D.Double(s, null)
     }
+
+//    override fun constrain(x: Int, y: Int, w: Int, h: Int) {
+//        translate(x * 2, y * 2) // todo [pavel.sergeev] is this correct?
+//        clipRect(0, 0, w, h)
+//    }
+//
+//    override fun constrain(x: Int, y: Int, width: Int, height: Int, visibleRegion: Region?) {
+//        constrain(x, y, width, height)
+//    }
 
     companion object {
         /** The line width to use when a BasicStroke with line width = 0.0 is applied.  */

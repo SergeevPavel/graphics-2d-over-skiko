@@ -4,6 +4,7 @@ package org.example.graphics2d
 import Logger
 import graphics2d.SkikoGraphics2D
 import org.jetbrains.skia.ColorSpace
+import org.jfree.skija.SkiaGraphics2D
 import sun.java2d.SunGraphics2D
 import sun.java2d.SurfaceData
 import sun.java2d.metal.MTLSurfaceData
@@ -65,7 +66,7 @@ fun withSkiaCanvas(
     })
 }
 
-fun JFrame.makeUseSkikoGraphics() {
+fun JFrame.makeUseSkikoGraphics1() {
     overrideGraphics2D { surfaceData, fg, bg, font ->
         val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
         (surfaceData as? MTLSurfaceData)?.let {
@@ -73,10 +74,13 @@ fun JFrame.makeUseSkikoGraphics() {
         } ?: run {
             Logger.debug { "Unsupported surface data type: $surfaceData" }
         }
-        val skikoGraphics2D = SkikoGraphics2D { picture ->
-            withSkiaCanvas(sunGraphics2D) { canvas, _, _ ->
-                canvas.clear(org.jetbrains.skia.Color.MAGENTA)
-                canvas.translate(0f, 32f * 2) // titlebar
+        val skikoGraphics2D = SkikoGraphics2D { x, y, picture ->
+            withSkiaCanvas(sunGraphics2D) { canvas, directContext, scale ->
+                // Swing assumes that the content persists between frames
+                // even when double buffering is enabled
+                // canvas.clear(org.jetbrains.skia.Color.MAGENTA)
+                canvas.translate(0f, 32f * scale) // titlebar
+                canvas.translate(x.toFloat() * scale, y.toFloat() * scale)
                 canvas.drawPicture(picture)
             }
         }
@@ -86,6 +90,42 @@ fun JFrame.makeUseSkikoGraphics() {
         skikoGraphics2D.paint = fg
         skikoGraphics2D.font = font
         skikoGraphics2D
+    }
+//    disableDoubleBuffering()
+}
+
+fun JFrame.makeUseSkikoGraphics2() {
+    overrideGraphics2D { surfaceData, fg, bg, font ->
+        val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
+        (surfaceData as? MTLSurfaceData)?.let {
+            //        SkiaGraphics2D()
+
+//        { picture ->
+//            withSkiaCanvas(sunGraphics2D) { canvas, _, _ ->
+//                canvas.clear(org.jetbrains.skia.Color.MAGENTA)
+//                canvas.translate(0f, 32f * 2) // titlebar
+//                canvas.drawPicture(picture)
+//            }
+//        }
+
+            val skikoGraphics2D = SkiaGraphics2D(surfaceData.width, surfaceData.height)
+            skikoGraphics2D.onDispose = {
+                withSkiaCanvas(sunGraphics2D) { canvas, width, height ->
+                    canvas.clear(org.jetbrains.skia.Color.MAGENTA)
+                    canvas.translate(0f, 32f * 2) // titlebar
+                    canvas.translate(x.toFloat() * 2f, y.toFloat() * 2f)
+                    skikoGraphics2D.getSurface()
+                    canvas.drawImage(skikoGraphics2D.getSurface().makeImageSnapshot(), 0f, 0f)
+//                    canvas.drawPicture(picture)
+                }
+            }
+            skikoGraphics2D.transform(sunGraphics2D.transform)
+            skikoGraphics2D.color = fg
+            skikoGraphics2D.background = bg
+            skikoGraphics2D.paint = fg
+            skikoGraphics2D.font = font
+            skikoGraphics2D
+        }
     }
     disableDoubleBuffering()
 }
@@ -100,7 +140,7 @@ fun JFrame.makeUseLoggingGraphics() {
         } ?: run {
             Logger.debug { "Unsupported surface data type: $surfaceData" }
         }
-        val skikoGraphics2D = SkikoGraphics2D { picture ->
+        val skikoGraphics2D = SkikoGraphics2D { x, y, picture ->
             withSkiaCanvas(sunGraphics2D) { canvas, _, _ ->
                 canvas.clear(org.jetbrains.skia.Color.MAGENTA)
                 canvas.translate(0f, 32f * 2) // titlebar

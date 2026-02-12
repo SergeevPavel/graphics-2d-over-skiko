@@ -35,9 +35,9 @@ object SkiaTextureDemo {
                     repaint()
                 }
             })
-                        Timer(30) {
-                            repaint()
-                        }.start()
+            Timer(30) {
+                repaint()
+            }.start()
         }
 
 

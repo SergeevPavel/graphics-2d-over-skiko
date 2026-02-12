@@ -35,6 +35,7 @@
 @file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
 package graphics2d
 
+import dispatchIfNeeded
 import org.jetbrains.skia.*
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skia.PictureRecorder
@@ -185,9 +186,11 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
     }
 
     var pictureRecorder: PictureRecorder? = null
-    var onDispose: (picture: Picture) -> Unit = {}
+    var onDispose: (Int, Int, picture: Picture) -> Unit = {
+        _, _, _ ->
+    }
 
-    constructor(onDispose: (picture: Picture) -> Unit) {
+    constructor(onDispose: (Int, Int, picture: Picture) -> Unit) {
         this.onDispose = onDispose
         init()
         pictureRecorder = PictureRecorder()
@@ -1879,14 +1882,6 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
         return drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, observer)
     }
 
-    private fun dispatchIfNeeded(block: () -> Unit) {
-        if (EventQueue.isDispatchThread()) {
-            block()
-        } else {
-            EventQueue.invokeLater(block)
-        }
-    }
-
     /**
      * This method does nothing.
      */
@@ -1909,16 +1904,21 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
                 }
                 val picture = it.finishRecordingAsPicture()
                 Logger.debug { "Called finishRecordingAsPicture() on $it" }
-                onDispose(picture)
+                onDispose(originX, originY, picture)
                 pictureRecorder = null
                 canvas = null
             }
         }
     }
 
+    var originX = 0
+    var originY = 0
+
     override fun constrain(x: Int, y: Int, w: Int, h: Int) {
         assert(canvas == null)
         Logger.debug { "constrain($x, $y, $w, $h)" }
+        originX = x
+        originY = y
         pictureRecorder?.let {
             val canvas = it.beginRecording(x.toFloat(), y.toFloat(), 2f * (x.toFloat() + w.toFloat()), 2f * (y.toFloat() + h.toFloat()))
             Logger.debug { "Called beginRecording() on $it" }

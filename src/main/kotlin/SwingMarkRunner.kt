@@ -1,7 +1,6 @@
 package org.example
 
-import org.example.graphics2d.disableDoubleBuffering
-import org.example.graphics2d.makeUseSkikoGraphics
+import org.example.graphics2d.makeUseSkikoGraphics1
 import javax.swing.JFrame
 import kotlin.emptyArray
 
@@ -9,7 +8,7 @@ import kotlin.emptyArray
 fun runSwingMark() {
     SwingMark.setFrameFactory {
         val jframe = JFrame("SwingMarks")
-        jframe.makeUseSkikoGraphics()
+        jframe.makeUseSkikoGraphics1()
 //        jframe.disableDoubleBuffering()
         jframe
     }
