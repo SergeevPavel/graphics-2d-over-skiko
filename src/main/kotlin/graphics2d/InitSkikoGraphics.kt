@@ -1,7 +1,7 @@
 @file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
 package org.example.graphics2d
 
-import graphics2d.Logger
+import Logger
 import graphics2d.SkikoGraphics2D
 import org.jetbrains.skia.ColorSpace
 import sun.java2d.SunGraphics2D

@@ -34,8 +34,6 @@
  */
 package org.jfree.skija
 
-import com.sun.org.slf4j.internal.Logger
-import com.sun.org.slf4j.internal.LoggerFactory
 import graphics2d.SkikoGraphicsConfiguration
 import org.jetbrains.skia.BlendMode
 import org.jetbrains.skia.Canvas
@@ -112,11 +110,7 @@ import kotlin.collections.indices
 import kotlin.math.max
 import kotlin.text.StringBuilder
 import kotlin.text.contains
-import kotlin.text.contentEquals
-import kotlin.text.get
-import kotlin.text.indices
 import kotlin.text.lowercase
-import kotlin.text.toFloat
 
 /**
  * An implementation of the Graphics2D API that targets the Skija graphics API
@@ -124,9 +118,6 @@ import kotlin.text.toFloat
  */
 class SkiaGraphics2D : Graphics2D {
     /* members */
-    /** log enabled in constructor if logger is at debug level (low perf overhead)  */
-    private val LOG_ENABLED: Boolean = true
-
     /** Rendering hints.  */
     private val hints: RenderingHints = RenderingHints(
         RenderingHints.KEY_ANTIALIASING,
@@ -182,14 +173,14 @@ class SkiaGraphics2D : Graphics2D {
      * @see .getBackground
      */
     /** The background color, used in the `clearRect()` method.  */
-    var background: Color? = null
+    var backgroundImpl: Color? = null
 
     override fun setBackground(color: Color?) {
-        background = color
+        backgroundImpl = color
     }
 
     override fun getBackground(): Color? {
-        return background
+        return backgroundImpl
     }
 
     private var transform: AffineTransform = AffineTransform()
@@ -205,9 +196,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .getComposite
      */
     override fun setComposite(comp: Composite?) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("setComposite({})", comp)
-        }
+        Logger.debug { "setComposite($comp)" }
         requireNotNull(comp) { "Null 'comp' argument." }
         composite = comp
         if (comp is AlphaComposite) {
@@ -236,7 +225,7 @@ class SkiaGraphics2D : Graphics2D {
     }
 
     /** The user clip (can be null).  */
-    var clip: Shape? = null
+    var clipImpl: Shape? = null
 
     /**
      * Returns the font render context.
@@ -246,7 +235,7 @@ class SkiaGraphics2D : Graphics2D {
     /**
      * The font render context.
      */
-    val fontRenderContext: FontRenderContext? = DEFAULT_FONT_RENDER_CONTEXT
+    val fontRenderContextImpl: FontRenderContext = DEFAULT_FONT_RENDER_CONTEXT
 
     override fun getFontRenderContext(): FontRenderContext? {
         return DEFAULT_FONT_RENDER_CONTEXT
@@ -286,7 +275,7 @@ class SkiaGraphics2D : Graphics2D {
      * The device configuration (this is lazily instantiated in the
      * getDeviceConfiguration() method).
      */
-    var deviceConfiguration: GraphicsConfiguration? = null
+    var deviceConfigurationImpl: GraphicsConfiguration? = null
 
     /**
      * Returns the device configuration associated with this
@@ -295,15 +284,15 @@ class SkiaGraphics2D : Graphics2D {
      * @return The device configuration (never `null`).
      */
     override fun getDeviceConfiguration(): GraphicsConfiguration {
-        if (deviceConfiguration == null) {
+        if (deviceConfigurationImpl == null) {
             val width = width
             val height = height
-            deviceConfiguration = SkikoGraphicsConfiguration(
+            deviceConfigurationImpl = SkikoGraphicsConfiguration(
                 width,
                 height
             )
         }
-        return deviceConfiguration!!
+        return deviceConfigurationImpl!!
     }
 
     /** Used and reused in the path() method below.  */
@@ -319,9 +308,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param height  the height.
      */
     constructor(width: Int, height: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("SkijaGraphics2D({}, {})", width, height)
-        }
+        Logger.debug { "SkijaGraphics2D($width, $height)" }
         this.width = width
         this.height = height
         this.surface = Surface.makeRasterN32Premul(width, height)
@@ -335,9 +322,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param canvas  the canvas (`null` not permitted).
      */
     constructor(canvas: Canvas) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("SkijaGraphics2D(Canvas)")
-        }
+        Logger.debug { "SkijaGraphics2D(Canvas)" }
         init(canvas)
     }
 
@@ -347,9 +332,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param parent SkijaGraphics2D instance to copy (`null` not permitted).
      */
     private constructor(parent: SkiaGraphics2D) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("SkijaGraphics2D(parent)")
-        }
+        Logger.debug { "SkijaGraphics2D(parent)" }
         nullNotPermitted(parent, "parent")
 
         this.canvas = parent.getCanvas()
@@ -360,8 +343,8 @@ class SkiaGraphics2D : Graphics2D {
         if (getRenderingHint(SkiaHints.KEY_FONT_MAPPING_FUNCTION) == null) {
             setRenderingHint(SkiaHints.KEY_FONT_MAPPING_FUNCTION, Function { s: String? -> FONT_MAPPING.get(s) })
         }
-        this.clip = parent.clip
-        this.background = parent.background
+        this.clipImpl = parent.clipImpl
+        this.backgroundImpl = parent.backgroundImpl
         this.skiaPaint = org.jetbrains.skia.Paint().apply {
             color = DEFAULT_PAINT.rgb
         }
@@ -373,9 +356,7 @@ class SkiaGraphics2D : Graphics2D {
 
         // save the original clip settings so they can be restored later in setClip()
         this.restoreCount = this.canvas!!.save()
-        if (LOG_ENABLED) {
-            LOGGER.debug("restoreCount updated to {}", this.restoreCount)
-        }
+        Logger.debug { "restoreCount updated to ${this.restoreCount}" }
     }
 
     /**
@@ -392,7 +373,7 @@ class SkiaGraphics2D : Graphics2D {
         }
 
         // use constants for quick initialization:
-        this.background = DEFAULT_PAINT
+        this.backgroundImpl = DEFAULT_PAINT
         this.skiaPaint = org.jetbrains.skia.Paint().apply {
             color = DEFAULT_PAINT.rgb
         }
@@ -403,9 +384,7 @@ class SkiaGraphics2D : Graphics2D {
 
         // save the original clip settings so they can be restored later in setClip()
         this.restoreCount = this.canvas!!.save()
-        if (LOG_ENABLED) {
-            LOGGER.debug("restoreCount updated to {}", this.restoreCount)
-        }
+        Logger.debug { "restoreCount updated to ${this.restoreCount}" }
     }
 
     private fun getCanvas(): Canvas {
@@ -435,23 +414,17 @@ class SkiaGraphics2D : Graphics2D {
         while (!iterator.isDone) {
             when (val segType: Int = iterator.currentSegment(coords)) {
                 PathIterator.SEG_MOVETO -> {
-                    if (LOG_ENABLED) {
-                        LOGGER.debug("SEG_MOVETO: ({},{})", coords[0], coords[1])
-                    }
+                    Logger.debug { "SEG_MOVETO: (${coords[0]},${coords[1]})" }
                     p.moveTo(coords[0].toFloat(), coords[1].toFloat())
                 }
 
                 PathIterator.SEG_LINETO -> {
-                    if (LOG_ENABLED) {
-                        LOGGER.debug("SEG_LINETO: ({},{})", coords[0], coords[1])
-                    }
+                    Logger.debug { "SEG_LINETO: (${coords[0]},${coords[1]})" }
                     p.lineTo(coords[0].toFloat(), coords[1].toFloat())
                 }
 
                 PathIterator.SEG_QUADTO -> {
-                    if (LOG_ENABLED) {
-                        LOGGER.debug("SEG_QUADTO: ({},{} {},{})", coords[0], coords[1], coords[2], coords[3])
-                    }
+                    Logger.debug { "SEG_QUADTO: (${coords[0]},${coords[1]} ${coords[2]},${coords[3]})" }
                     p.quadTo(
                         coords[0].toFloat(), coords[1].toFloat(),
                         coords[2].toFloat(), coords[3].toFloat()
@@ -459,17 +432,7 @@ class SkiaGraphics2D : Graphics2D {
                 }
 
                 PathIterator.SEG_CUBICTO -> {
-                    if (LOG_ENABLED) {
-                        LOGGER.debug(
-                            "SEG_CUBICTO: ({},{} {},{} {},{})",
-                            coords[0],
-                            coords[1],
-                            coords[2],
-                            coords[3],
-                            coords[4],
-                            coords[5]
-                        )
-                    }
+                    Logger.debug { "SEG_CUBICTO: (${coords[0]},${coords[1]} ${coords[2]},${coords[3]} ${coords[4]},${coords[5]})" }
                     p.cubicTo(
                         coords[0].toFloat(), coords[1].toFloat(),
                         coords[2].toFloat(), coords[3].toFloat(),
@@ -478,9 +441,7 @@ class SkiaGraphics2D : Graphics2D {
                 }
 
                 PathIterator.SEG_CLOSE -> {
-                    if (LOG_ENABLED) {
-                        LOGGER.debug("SEG_CLOSE: ")
-                    }
+                    Logger.debug { "SEG_CLOSE: " }
                     p.closePath()
                 }
 
@@ -502,9 +463,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .fill
      */
     override fun draw(s: Shape) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("draw(Shape) : {}", s)
-        }
+        Logger.debug { "draw(Shape) : $s" }
         this.skiaPaint?.mode = PaintMode.STROKE
         if (s is Line2D) {
             val l: Line2D = s
@@ -555,9 +514,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .draw
      */
     override fun fill(s: Shape) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("fill({})", s)
-        }
+        Logger.debug { "fill($s)" }
         this.skiaPaint!!.mode = PaintMode.FILL
         if (s is Rectangle2D) {
             val r: Rectangle2D = s
@@ -617,9 +574,7 @@ class SkiaGraphics2D : Graphics2D {
         img: Image?, xform: AffineTransform?,
         obs: ImageObserver?
     ): Boolean {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawImage(Image, AffineTransform, ImageObserver)")
-        }
+        Logger.debug { "drawImage(Image, AffineTransform, ImageObserver)" }
         val savedTransform: AffineTransform = getTransform()
         if (xform != null) {
             transform(xform)
@@ -641,9 +596,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param y  the y-coordinate.
      */
     override fun drawImage(img: BufferedImage?, op: BufferedImageOp?, x: Int, y: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawImage(BufferedImage, BufferedImageOp, {}, {})", x, y)
-        }
+        Logger.debug { "drawImage(BufferedImage, BufferedImageOp, $x, $y)" }
         var imageToDraw: BufferedImage? = img
         if (op != null) {
             imageToDraw = op.filter(img, null)
@@ -659,9 +612,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param xform  the transform.
      */
     override fun drawRenderedImage(img: RenderedImage?, xform: AffineTransform?) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawRenderedImage(RenderedImage, AffineTransform)")
-        }
+        Logger.debug { "drawRenderedImage(RenderedImage, AffineTransform)" }
         if (img == null) { // to match the behaviour specified in the JDK
             return
         }
@@ -679,9 +630,7 @@ class SkiaGraphics2D : Graphics2D {
         img: RenderableImage,
         xform: AffineTransform?
     ) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawRenderableImage(RenderableImage, AffineTransform xform)")
-        }
+        Logger.debug { "drawRenderableImage(RenderableImage, AffineTransform xform)" }
         val ri: RenderedImage? = img.createDefaultRendering()
         drawRenderedImage(ri, xform)
     }
@@ -697,9 +646,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .drawString
      */
     override fun drawString(str: String, x: Int, y: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawString({}, {}, {}", str, x, y)
-        }
+        Logger.debug { "drawString($str, $x, $y)" }
         drawString(str, x.toFloat(), y.toFloat())
     }
 
@@ -712,9 +659,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param y  the y-coordinate.
      */
     override fun drawString(str: String, x: Float, y: Float) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawString({}, {}, {})", str, x, y)
-        }
+        Logger.debug { "drawString($str, $x, $y)" }
         this.skiaPaint!!.mode = PaintMode.FILL
         this.canvas!!.drawString(str, x, y, this.skijaFont, this.skiaPaint!!)
     }
@@ -729,9 +674,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param y  the x-coordinate.
      */
     override fun drawString(iterator: AttributedCharacterIterator, x: Int, y: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawString(AttributedCharacterIterator, {}, {}", x, y)
-        }
+        Logger.debug { "drawString(AttributedCharacterIterator, $x, $y)" }
         drawString(iterator, x.toFloat(), y.toFloat())
     }
 
@@ -747,12 +690,10 @@ class SkiaGraphics2D : Graphics2D {
         iterator: AttributedCharacterIterator, x: Float,
         y: Float
     ) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawString(AttributedCharacterIterator, {}, {}", x, y)
-        }
+        Logger.debug { "drawString(AttributedCharacterIterator, $x, $y)" }
         val s: MutableSet<AttributedCharacterIterator.Attribute?> = iterator.getAllAttributeKeys()
         if (!s.isEmpty()) {
-            val layout: TextLayout = TextLayout(iterator, this.fontRenderContext)
+            val layout: TextLayout = TextLayout(iterator, this.fontRenderContextImpl)
             layout.draw(this, x, y)
         } else {
             val sb = sbStr // not thread-safe
@@ -776,9 +717,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param y  the y-coordinate.
      */
     override fun drawGlyphVector(g: GlyphVector, x: Float, y: Float) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawGlyphVector(GlyphVector, {}, {})", x, y)
-        }
+        Logger.debug { "drawGlyphVector(GlyphVector, $x, $y)" }
         fill(g.getOutline(x, y))
     }
 
@@ -794,9 +733,7 @@ class SkiaGraphics2D : Graphics2D {
      * @return A boolean.
      */
     override fun hit(rect: Rectangle, s: Shape, onStroke: Boolean): Boolean {
-        if (LOG_ENABLED) {
-            LOGGER.debug("hit(Rectangle, Shape, boolean)")
-        }
+        Logger.debug { "hit(Rectangle, Shape, boolean)" }
         val ts: Shape
         if (onStroke) {
             ts = _createTransformedShape(this.stroke!!.createStrokedShape(s), false)
@@ -822,9 +759,7 @@ class SkiaGraphics2D : Graphics2D {
      */
     override fun setStroke(s: Stroke) {
         nullNotPermitted(s, "s")
-        if (LOG_ENABLED) {
-            LOGGER.debug("setStroke({})", stroke)
-        }
+        Logger.debug { "setStroke($stroke)" }
         if (s === this.stroke) { // quick test, full equals test later
             return
         }
@@ -917,9 +852,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .setRenderingHint
      */
     override fun getRenderingHint(hintKey: RenderingHints.Key): Any? {
-        if (LOG_ENABLED) {
-            LOGGER.debug("getRenderingHint({})", hintKey)
-        }
+        Logger.debug { "getRenderingHint($hintKey)" }
         return this.hints[hintKey]
     }
 
@@ -933,9 +866,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .getRenderingHint
      */
     override fun setRenderingHint(hintKey: RenderingHints.Key, hintValue: Any) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("setRenderingHint({}, {})", hintKey, hintValue)
-        }
+        Logger.debug { "setRenderingHint($hintKey, $hintValue)" }
         this.hints[hintKey] = hintValue
     }
 
@@ -947,9 +878,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .getRenderingHints
      */
     override fun setRenderingHints(hints: MutableMap<*, *>?) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("setRenderingHints(Map<?, ?>): {}", hints)
-        }
+        Logger.debug { "setRenderingHints(Map<?, ?>): $hints" }
         this.hints.clear()
         if (hints != null) {
             this.hints.putAll(hints)
@@ -962,9 +891,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param hints  the hints (`null` not permitted).
      */
     override fun addRenderingHints(hints: MutableMap<*, *>?) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("addRenderingHints(Map<?, ?>): {}", hints)
-        }
+        Logger.debug { "addRenderingHints(Map<?, ?>): $hints" }
         if (hints != null) {
             this.hints.putAll(hints)
         }
@@ -980,18 +907,14 @@ class SkiaGraphics2D : Graphics2D {
      * @see .setRenderingHints
      */
     override fun getRenderingHints(): RenderingHints? {
-        if (LOG_ENABLED) {
-            LOGGER.debug("getRenderingHints()")
-        }
+        Logger.debug { "getRenderingHints()" }
         return this.hints.clone() as RenderingHints?
 
     }
 
     private val renderingHintsInternally: RenderingHints
         get() {
-            if (LOG_ENABLED) {
-                LOGGER.debug("getRenderingHintsInternally()")
-            }
+            Logger.debug { "getRenderingHintsInternally()" }
             return this.hints
         }
 
@@ -1005,9 +928,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .translate
      */
     override fun translate(tx: Int, ty: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("translate({}, {})", tx, ty)
-        }
+        Logger.debug { "translate($tx, $ty)" }
         translate(tx.toDouble(), ty.toDouble())
     }
 
@@ -1018,9 +939,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param ty  the y-translation.
      */
     override fun translate(tx: Double, ty: Double) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("translate({}, {})", tx, ty)
-        }
+        Logger.debug { "translate($tx, $ty)" }
         this.transform.translate(tx, ty)
         this.canvas!!.translate(tx.toFloat(), ty.toFloat())
     }
@@ -1031,9 +950,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param theta  the rotation angle (in radians).
      */
     override fun rotate(theta: Double) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("rotate({})", theta)
-        }
+        Logger.debug { "rotate($theta)" }
         this.transform.rotate(theta)
         this.canvas!!.rotate(Math.toDegrees(theta).toFloat())
     }
@@ -1046,9 +963,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param y  the y-coordinate.
      */
     override fun rotate(theta: Double, x: Double, y: Double) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("rotate({}, {}, {})", theta, x, y)
-        }
+        Logger.debug { "rotate($theta, $x, $y)" }
         translate(x, y)
         rotate(theta)
         translate(-x, -y)
@@ -1061,9 +976,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param sy  the y-scaling factor.
      */
     override fun scale(sx: Double, sy: Double) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("scale({}, {})", sx, sy)
-        }
+        Logger.debug { "scale($sx, $sy)" }
         this.transform.scale(sx, sy)
         this.canvas!!.scale(sx.toFloat(), sy.toFloat())
     }
@@ -1080,9 +993,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param shy  the y-shear factor.
      */
     override fun shear(shx: Double, shy: Double) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("shear({}, {})", shx, shy)
-        }
+        Logger.debug { "shear($shx, $shy)" }
         this.transform.shear(shx, shy)
         this.canvas!!.skew(shx.toFloat(), shy.toFloat())
     }
@@ -1093,9 +1004,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param t  the transform (`null` not permitted).
      */
     override fun transform(t: AffineTransform?) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("transform(AffineTransform) : {}", t)
-        }
+        Logger.debug { "transform(AffineTransform) : $t" }
         val tx: AffineTransform = getTransform()
         tx.concatenate(t)
         setTransform(tx)
@@ -1109,17 +1018,13 @@ class SkiaGraphics2D : Graphics2D {
      * @see .setTransform
      */
     override fun getTransform(): AffineTransform {
-        if (LOG_ENABLED) {
-            LOGGER.debug("getTransform()")
-        }
+        Logger.debug { "getTransform()" }
         return this.transform.clone() as AffineTransform
     }
 
     private val transformInternally: AffineTransform
         get() {
-            if (LOG_ENABLED) {
-                LOGGER.debug("getTransformInternally()")
-            }
+            Logger.debug { "getTransformInternally()" }
             return this.transform
         }
 
@@ -1133,9 +1038,7 @@ class SkiaGraphics2D : Graphics2D {
      */
     override fun setTransform(t: AffineTransform?) {
         var t: AffineTransform? = t
-        if (LOG_ENABLED) {
-            LOGGER.debug("setTransform({})", t)
-        }
+        Logger.debug { "setTransform($t)" }
         if (t == null) {
             t = AffineTransform()
             this.transform = t
@@ -1150,9 +1053,7 @@ class SkiaGraphics2D : Graphics2D {
     }
 
     override fun setPaint(paint: Paint?) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("setPaint({})", paint)
-        }
+        Logger.debug { "setPaint($paint)" }
         if (paint == null) {
             return
         }
@@ -1264,17 +1165,13 @@ class SkiaGraphics2D : Graphics2D {
      * @return A new graphics object.
      */
     override fun create(): Graphics {
-        if (LOG_ENABLED) {
-            LOGGER.debug("create()")
-        }
+        Logger.debug { "create()" }
         // use special copy-constructor:
         return SkiaGraphics2D(this)
     }
 
     override fun create(x: Int, y: Int, width: Int, height: Int): Graphics? {
-        if (LOG_ENABLED) {
-            LOGGER.debug("create({}, {}, {}, {})", x, y, width, height)
-        }
+        Logger.debug { "create($x, $y, $width, $height)" }
         return super.create(x, y, width, height)
     }
 
@@ -1303,9 +1200,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .setPaint
      */
     override fun setColor(c: Color?) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("setColor(Color) : {}", c)
-        }
+        Logger.debug { "setColor(Color) : $c" }
         if (c == null || c == this.color) {
             return
         }
@@ -1346,9 +1241,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .getFont
      */
     override fun setFont(font: Font?) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("setFont({})", font)
-        }
+        Logger.debug { "setFont($font)" }
         if (font == null) {
             return
         }
@@ -1361,9 +1254,7 @@ class SkiaGraphics2D : Graphics2D {
         if (fm != null) {
             val mappedFontName = fm.apply(fontName)
             if (mappedFontName != null) {
-                if (LOG_ENABLED) {
-                    LOGGER.debug("Mapped font name is {}", mappedFontName)
-                }
+                Logger.debug { "Mapped font name is $mappedFontName" }
                 fontName = mappedFontName
             }
         }
@@ -1372,9 +1263,7 @@ class SkiaGraphics2D : Graphics2D {
 
         this.typeface = TYPEFACE_MAP.get(key)
         if (this.typeface == null) {
-            if (LOG_ENABLED) {
-                LOGGER.debug("Typeface.makeFromName({} style={})", fontName, style)
-            }
+            Logger.debug { "Typeface.makeFromName($fontName style=$style)" }
             this.typeface = FontMgr.default.legacyMakeTypeface(fontName, style)
             TYPEFACE_MAP[key] = this.typeface
         }
@@ -1411,7 +1300,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .getClip
      */
     override fun getClipBounds(): Rectangle? {
-        if (this.clip == null) {
+        if (this.clipImpl == null) {
             return null
         }
         return this.clipInternally!!.bounds
@@ -1427,21 +1316,19 @@ class SkiaGraphics2D : Graphics2D {
      * @see .setClip
      */
     override fun getClip(): Shape? {
-        if (LOG_ENABLED) {
-            LOGGER.debug("getClip()")
-        }
-        if (this.clip == null) {
+        Logger.debug { "getClip()" }
+        if (this.clipImpl == null) {
             return null
         }
-        return _inverseTransform(this.clip, true)
+        return _inverseTransform(this.clipImpl, true)
     }
 
     private val clipInternally: Shape?
         get() {
-            if (this.clip == null) {
+            if (this.clipImpl == null) {
                 return null
             }
-            return _inverseTransform(this.clip, false)
+            return _inverseTransform(this.clipImpl, false)
         }
 
     /**
@@ -1454,9 +1341,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param height  the height.
      */
     override fun clipRect(x: Int, y: Int, width: Int, height: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("clipRect({}, {}, {}, {})", x, y, width, height)
-        }
+        Logger.debug { "clipRect($x, $y, $width, $height)" }
         clip(rect(x, y, width, height))
     }
 
@@ -1471,9 +1356,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .getClip
      */
     override fun setClip(x: Int, y: Int, width: Int, height: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("setClip({}, {}, {}, {})", x, y, width, height)
-        }
+        Logger.debug { "setClip($x, $y, $width, $height)" }
         setClip(rect(x, y, width, height))
     }
 
@@ -1489,9 +1372,7 @@ class SkiaGraphics2D : Graphics2D {
     }
 
     private fun setClip(shape: Shape?, clone: Boolean) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("setClip({})", shape)
-        }
+        Logger.debug { "setClip($shape)" }
         // a new clip is being set, so first restore the original clip (and save
         // it again for future restores)
         this.canvas!!.restoreToCount(this.restoreCount)
@@ -1499,7 +1380,7 @@ class SkiaGraphics2D : Graphics2D {
         // restoring the clip might also reset the transform, so reapply it
         setTransform(getTransform())
         // null is handled fine here...
-        this.clip = _createTransformedShape(shape!!, clone) // device space
+        this.clipImpl = _createTransformedShape(shape!!, clone) // device space
         // now apply on the Skija canvas
         this.canvas!!.clipPath(path(shape))
     }
@@ -1520,13 +1401,11 @@ class SkiaGraphics2D : Graphics2D {
      */
     override fun clip(s: Shape) {
         var s = s
-        if (LOG_ENABLED) {
-            LOGGER.debug("clip({})", s)
-        }
+        Logger.debug { "clip($s)" }
         if (s is Line2D) {
             s = s.bounds2D
         }
-        if (this.clip == null) {
+        if (this.clipImpl == null) {
             setClip(s)
             return
         }
@@ -1555,9 +1434,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param dy  the delta y.
      */
     override fun copyArea(x: Int, y: Int, width: Int, height: Int, dx: Int, dy: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("copyArea({}, {}, {}, {}, {}, {}) - NOT IMPLEMENTED", x, y, width, height, dx, dy)
-        }
+        Logger.debug { "copyArea($x, $y, $width, $height, $dx, $dy) - NOT IMPLEMENTED" }
         // FIXME: implement this, low priority
     }
 
@@ -1571,9 +1448,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param y2  the x-coordinate of the end point.
      */
     override fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawLine()")
-        }
+        Logger.debug { "drawLine()" }
         if (this.line == null) {
             this.line = Line2D.Double(x1.toDouble(), y1.toDouble(), x2.toDouble(), y2.toDouble())
         } else {
@@ -1591,9 +1466,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param height  the rectangle height.
      */
     override fun fillRect(x: Int, y: Int, width: Int, height: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("fillRect({}, {}, {}, {})", x, y, width, height)
-        }
+        Logger.debug { "fillRect($x, $y, $width, $height)" }
         fill(rect(x, y, width, height))
     }
 
@@ -1610,14 +1483,12 @@ class SkiaGraphics2D : Graphics2D {
      * @see .getBackground
      */
     override fun clearRect(x: Int, y: Int, width: Int, height: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("clearRect({}, {}, {}, {})", x, y, width, height)
-        }
-        if (this.background == null) {
+        Logger.debug { "clearRect($x, $y, $width, $height)" }
+        if (this.backgroundImpl == null) {
             return  // we can't do anything
         }
         val saved = this.paint
-        this.paint = this.background
+        this.paint = this.backgroundImpl
         fillRect(x, y, width, height)
         this.paint = saved
     }
@@ -1660,9 +1531,7 @@ class SkiaGraphics2D : Graphics2D {
         x: Int, y: Int, width: Int, height: Int,
         arcWidth: Int, arcHeight: Int
     ) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawRoundRect({}, {}, {}, {}, {}, {})", x, y, width, height, arcWidth, arcHeight)
-        }
+        Logger.debug { "drawRoundRect($x, $y, $width, $height, $arcWidth, $arcHeight)" }
         draw(roundRect(x, y, width, height, arcWidth, arcHeight))
     }
 
@@ -1682,9 +1551,7 @@ class SkiaGraphics2D : Graphics2D {
         x: Int, y: Int, width: Int, height: Int,
         arcWidth: Int, arcHeight: Int
     ) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("fillRoundRect({}, {}, {}, {}, {}, {})", x, y, width, height, arcWidth, arcHeight)
-        }
+        Logger.debug { "fillRoundRect($x, $y, $width, $height, $arcWidth, $arcHeight)" }
         fill(roundRect(x, y, width, height, arcWidth, arcHeight))
     }
 
@@ -1732,9 +1599,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .fillOval
      */
     override fun drawOval(x: Int, y: Int, width: Int, height: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawOval({}, {}, {}, {})", x, y, width, height)
-        }
+        Logger.debug { "drawOval($x, $y, $width, $height)" }
         draw(oval(x, y, width, height))
     }
 
@@ -1749,9 +1614,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .drawOval
      */
     override fun fillOval(x: Int, y: Int, width: Int, height: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("fillOval({}, {}, {}, {})", x, y, width, height)
-        }
+        Logger.debug { "fillOval($x, $y, $width, $height)" }
         fill(oval(x, y, width, height))
     }
 
@@ -1796,9 +1659,7 @@ class SkiaGraphics2D : Graphics2D {
         x: Int, y: Int, width: Int, height: Int, startAngle: Int,
         arcAngle: Int
     ) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawArc({}, {}, {}, {}, {}, {})", x, y, width, height, startAngle, arcAngle)
-        }
+        Logger.debug { "drawArc($x, $y, $width, $height, $startAngle, $arcAngle)" }
         draw(arc(x, y, width, height, startAngle, arcAngle, Arc2D.OPEN))
     }
 
@@ -1821,9 +1682,7 @@ class SkiaGraphics2D : Graphics2D {
         x: Int, y: Int, width: Int, height: Int, startAngle: Int,
         arcAngle: Int
     ) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("fillArc({}, {}, {}, {}, {}, {})", x, y, width, height, startAngle, arcAngle)
-        }
+        Logger.debug { "fillArc($x, $y, $width, $height, $startAngle, $arcAngle)" }
         fill(arc(x, y, width, height, startAngle, arcAngle, Arc2D.PIE))
     }
 
@@ -1874,9 +1733,7 @@ class SkiaGraphics2D : Graphics2D {
      * @param nPoints  the number of points to use for the polyline.
      */
     override fun drawPolyline(xPoints: IntArray, yPoints: IntArray, nPoints: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawPolyline(int[], int[], int)")
-        }
+        Logger.debug { "drawPolyline(int[], int[], int)" }
         val p: GeneralPath = createPolygon(xPoints, yPoints, nPoints, false)
         draw(p)
     }
@@ -1892,9 +1749,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .fillPolygon
      */
     override fun drawPolygon(xPoints: IntArray, yPoints: IntArray, nPoints: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawPolygon(int[], int[], int)")
-        }
+        Logger.debug { "drawPolygon(int[], int[], int)" }
         val p: GeneralPath = createPolygon(xPoints, yPoints, nPoints, true)
         draw(p)
     }
@@ -1909,9 +1764,7 @@ class SkiaGraphics2D : Graphics2D {
      * @see .drawPolygon
      */
     override fun fillPolygon(xPoints: IntArray, yPoints: IntArray, nPoints: Int) {
-        if (LOG_ENABLED) {
-            LOGGER.debug("fillPolygon(int[], int[], int)")
-        }
+        Logger.debug { "fillPolygon(int[], int[], int)" }
         val p: GeneralPath = createPolygon(xPoints, yPoints, nPoints, true)
         fill(p)
     }
@@ -1931,9 +1784,7 @@ class SkiaGraphics2D : Graphics2D {
         xPoints: IntArray, yPoints: IntArray,
         nPoints: Int, close: Boolean
     ): GeneralPath {
-        if (LOG_ENABLED) {
-            LOGGER.debug("createPolygon(int[], int[], int, boolean)")
-        }
+        Logger.debug { "createPolygon(int[], int[], int, boolean)" }
         val p: GeneralPath = GeneralPath()
         p.moveTo(xPoints[0].toFloat(), yPoints[0].toFloat())
         for (i in 1..<nPoints) {
@@ -1957,9 +1808,7 @@ class SkiaGraphics2D : Graphics2D {
      * @return `true` if there is no more drawing to be done.
      */
     override fun drawImage(img: Image?, x: Int, y: Int, observer: ImageObserver?): Boolean {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawImage(Image, {}, {}, ImageObserver)", x, y)
-        }
+        Logger.debug { "drawImage(Image, $x, $y, ImageObserver)" }
         if (img == null) {
             return true
         }
@@ -1989,17 +1838,11 @@ class SkiaGraphics2D : Graphics2D {
      * @return `true` if there is no more drawing to be done.
      */
     override fun drawImage(img: Image?, x: Int, y: Int, width: Int, height: Int, observer: ImageObserver?): Boolean {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawImage(Image, {}, {}, {}, {}, ImageObserver)", x, y, width, height)
-        }
-
-        // LOGGER.info("drawImage(Image, {}, {}, {}, {}, ImageObserver)", x, y, width, height);
+        Logger.debug { "drawImage(Image, $x, $y, $width, $height, ImageObserver)" }
         val buffered: BufferedImage
         if ((img is BufferedImage) && (img as BufferedImage).getType() == BufferedImage.TYPE_INT_ARGB) {
             buffered = img as BufferedImage
         } else {
-            // LOGGER.info("drawImage(): copy BufferedImage");
-
             buffered = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
             val g2: Graphics2D = buffered.createGraphics()
             g2.drawImage(img, 0, 0, width, height, null)
@@ -2027,9 +1870,7 @@ class SkiaGraphics2D : Graphics2D {
         img: Image?, x: Int, y: Int, bgcolor: Color?,
         observer: ImageObserver?
     ): Boolean {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawImage(Image, {}, {}, Color, ImageObserver)", x, y)
-        }
+        Logger.debug { "drawImage(Image, $x, $y, Color, ImageObserver)" }
         if (img == null) {
             return true
         }
@@ -2053,9 +1894,7 @@ class SkiaGraphics2D : Graphics2D {
         bgcolor: Color?,
         observer: ImageObserver?
     ): Boolean {
-        if (LOG_ENABLED) {
-            LOGGER.debug("drawImage(Image, {}, {}, {}, {}, Color, ImageObserver)", x, y, width, height)
-        }
+        Logger.debug { "drawImage(Image, $x, $y, $width, $height, Color, ImageObserver)" }
         val saved = this.paint
         this.paint = bgcolor
         fillRect(x, y, width, height)
@@ -2093,19 +1932,7 @@ class SkiaGraphics2D : Graphics2D {
         sy2: Int,
         observer: ImageObserver?
     ): Boolean {
-        if (LOG_ENABLED) {
-            LOGGER.debug(
-                "drawImage(Image, {}, {}, {}, {}, {}, {}, {}, {}, ImageObserver)",
-                dx1,
-                dy1,
-                dx2,
-                dy2,
-                sx1,
-                sy1,
-                sx2,
-                sy2
-            )
-        }
+        Logger.debug { "drawImage(Image, $dx1, $dy1, $dx2, $dy2, $sx1, $sy1, $sx2, $sy2, ImageObserver)" }
         val w = dx2 - dx1
         val h = dy2 - dy1
         val img2: BufferedImage = BufferedImage(
@@ -2151,19 +1978,7 @@ class SkiaGraphics2D : Graphics2D {
         bgcolor: Color?,
         observer: ImageObserver?
     ): Boolean {
-        if (LOG_ENABLED) {
-            LOGGER.debug(
-                "drawImage(Image, {}, {}, {}, {}, {}, {}, {}, {}, Color, ImageObserver)",
-                dx1,
-                dy1,
-                dx2,
-                dy2,
-                sx1,
-                sy1,
-                sx2,
-                sy2
-            )
-        }
+        Logger.debug { "drawImage(Image, $dx1, $dy1, $dx2, $dy2, $sx1, $sy1, $sx2, $sy2, Color, ImageObserver)" }
         val saved = this.paint
         this.paint = bgcolor
         fillRect(dx1, dy1, dx2 - dx1, dy2 - dy1)
@@ -2175,9 +1990,7 @@ class SkiaGraphics2D : Graphics2D {
      * This method does nothing.
      */
     override fun dispose() {
-        if (LOG_ENABLED) {
-            LOGGER.debug("dispose()")
-        }
+        Logger.debug { "dispose()" }
         this.canvas!!.restoreToCount(this.restoreCount)
     }
 
@@ -2214,9 +2027,6 @@ class SkiaGraphics2D : Graphics2D {
     }
 
     companion object {
-        /** SkijaGraphics2D version  */
-        private val LOGGER: Logger = LoggerFactory.getLogger(SkiaGraphics2D::class.java)
-
         /** The line width to use when a BasicStroke with line width = 0.0 is applied.  */
         private const val MIN_LINE_WIDTH = 0.1
 
@@ -2398,8 +2208,6 @@ class SkiaGraphics2D : Graphics2D {
                 bytes[i * 4] = (p and 0xFF).toByte()
             }
             val imageInfo = ImageInfo(w, h, ColorType.BGRA_8888, ColorAlphaType.UNPREMUL)
-
-            // LOGGER.info("convertToSkijaImage(): {}", imageInfo);
             return org.jetbrains.skia.Image.makeRaster(imageInfo, bytes, 4 * w)
         }
     }

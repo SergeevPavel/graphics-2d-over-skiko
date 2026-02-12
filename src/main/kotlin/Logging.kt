@@ -1,5 +1,3 @@
-package graphics2d
-
 import org.jetbrains.skiko.currentNanoTime
 import kotlin.time.Duration.Companion.nanoseconds
 

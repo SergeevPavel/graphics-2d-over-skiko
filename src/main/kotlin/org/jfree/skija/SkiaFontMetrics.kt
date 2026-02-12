@@ -34,8 +34,6 @@
  */
 package org.jfree.skija
 
-import com.sun.org.slf4j.internal.Logger
-import com.sun.org.slf4j.internal.LoggerFactory
 import java.awt.Font
 import java.awt.FontMetrics
 
@@ -58,7 +56,7 @@ class SkiaFontMetrics(skijaFont: org.jetbrains.skia.Font, awtFont: Font?) : Font
      */
     override fun getLeading(): Int {
         val result = this.metrics.leading.toInt()
-        LOGGER.debug("getLeading() -> {}", result)
+        Logger.debug { "getLeading() -> $result" }
         return result
     }
 
@@ -69,7 +67,7 @@ class SkiaFontMetrics(skijaFont: org.jetbrains.skia.Font, awtFont: Font?) : Font
      */
     override fun getAscent(): Int {
         val result = -this.metrics.ascent.toInt()
-        LOGGER.debug("getAscent() -> {}", result)
+        Logger.debug { "getAscent() -> $result" }
         return result
     }
 
@@ -80,7 +78,7 @@ class SkiaFontMetrics(skijaFont: org.jetbrains.skia.Font, awtFont: Font?) : Font
      */
     override fun getDescent(): Int {
         val result = this.metrics.descent.toInt()
-        LOGGER.debug("getDescent() -> {}", result)
+        Logger.debug { "getDescent() -> $result" }
         return result
     }
 
@@ -93,7 +91,7 @@ class SkiaFontMetrics(skijaFont: org.jetbrains.skia.Font, awtFont: Font?) : Font
      */
     override fun charWidth(ch: Char): Int {
         val result = this.skiaFont.measureTextWidth(ch.toString()).toInt()
-        LOGGER.debug("charWidth({}) -> {}", ch, result)
+        Logger.debug { "charWidth($ch) -> $result" }
         return result
     }
 
@@ -108,11 +106,9 @@ class SkiaFontMetrics(skijaFont: org.jetbrains.skia.Font, awtFont: Font?) : Font
      */
     override fun charsWidth(data: CharArray, off: Int, len: Int): Int {
         val result = this.skiaFont.measureTextWidth(String(data, off, len)).toInt()
-        LOGGER.debug("charsWidth({}, {}, {}) -> {}", data, off, len, result)
+        Logger.debug {
+            "charsWidth($data, $off, $len) -> $result"
+        }
         return result
-    }
-
-    companion object {
-        private val LOGGER: Logger = LoggerFactory.getLogger(SkiaFontMetrics::class.java)
     }
 }
