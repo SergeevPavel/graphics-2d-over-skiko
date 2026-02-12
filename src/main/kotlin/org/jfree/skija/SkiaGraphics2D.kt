@@ -125,7 +125,7 @@ import kotlin.text.toFloat
 class SkiaGraphics2D : Graphics2D {
     /* members */
     /** log enabled in constructor if logger is at debug level (low perf overhead)  */
-    private val LOG_ENABLED: Boolean
+    private val LOG_ENABLED: Boolean = true
 
     /** Rendering hints.  */
     private val hints: RenderingHints = RenderingHints(
@@ -319,7 +319,6 @@ class SkiaGraphics2D : Graphics2D {
      * @param height  the height.
      */
     constructor(width: Int, height: Int) {
-        LOG_ENABLED = LOGGER.isDebugEnabled()
         if (LOG_ENABLED) {
             LOGGER.debug("SkijaGraphics2D({}, {})", width, height)
         }
@@ -336,7 +335,6 @@ class SkiaGraphics2D : Graphics2D {
      * @param canvas  the canvas (`null` not permitted).
      */
     constructor(canvas: Canvas) {
-        LOG_ENABLED = LOGGER.isDebugEnabled()
         if (LOG_ENABLED) {
             LOGGER.debug("SkijaGraphics2D(Canvas)")
         }
@@ -349,7 +347,6 @@ class SkiaGraphics2D : Graphics2D {
      * @param parent SkijaGraphics2D instance to copy (`null` not permitted).
      */
     private constructor(parent: SkiaGraphics2D) {
-        LOG_ENABLED = LOGGER.isDebugEnabled()
         if (LOG_ENABLED) {
             LOGGER.debug("SkijaGraphics2D(parent)")
         }
@@ -2185,14 +2182,14 @@ class SkiaGraphics2D : Graphics2D {
     }
 
     private fun _createTransformedShape(s: Shape, clone: Boolean): Shape {
-        if (this.transform.isIdentity()) {
-            return if (clone) _clone(s) else s
+        if (this.transform.isIdentity) {
+            return (if (clone) _clone(s) else s)!!
         }
         return this.transform.createTransformedShape(s)
     }
 
     private fun _inverseTransform(s: Shape?, clone: Boolean): Shape? {
-        if (this.transform.isIdentity()) {
+        if (this.transform.isIdentity) {
             return if (clone) _clone(s) else s
         }
         try {
@@ -2362,11 +2359,11 @@ class SkiaGraphics2D : Graphics2D {
          */
         private fun convertRenderedImage(img: RenderedImage): BufferedImage {
             if (img is BufferedImage) {
-                return img as BufferedImage
+                return img
             }
-            val width: Int = img.getWidth()
-            val height: Int = img.getHeight()
-            val cm: ColorModel = img.getColorModel()
+            val width: Int = img.width
+            val height: Int = img.height
+            val cm: ColorModel = img.colorModel
             val isAlphaPremultiplied = cm.isAlphaPremultiplied()
 
             val raster: WritableRaster = cm.createCompatibleWritableRaster(width, height)
