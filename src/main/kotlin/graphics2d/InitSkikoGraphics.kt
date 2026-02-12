@@ -80,11 +80,40 @@ fun JFrame.makeUseSkikoGraphics() {
                 canvas.drawPicture(picture)
             }
         }
+        skikoGraphics2D.transform(sunGraphics2D.transform)
         skikoGraphics2D.color = fg
         skikoGraphics2D.background = bg
         skikoGraphics2D.paint = fg
         skikoGraphics2D.font = font
         skikoGraphics2D
+    }
+    disableDoubleBuffering()
+}
+
+var counter = 0
+
+fun JFrame.makeUseLoggingGraphics() {
+    overrideGraphics2D { surfaceData, fg, bg, font ->
+        val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
+        (surfaceData as? MTLSurfaceData)?.let {
+            Logger.debug { "Surface data width: ${surfaceData.width}, height: ${surfaceData.height}" }
+        } ?: run {
+            Logger.debug { "Unsupported surface data type: $surfaceData" }
+        }
+        val skikoGraphics2D = SkikoGraphics2D { picture ->
+            withSkiaCanvas(sunGraphics2D) { canvas, _, _ ->
+                canvas.clear(org.jetbrains.skia.Color.MAGENTA)
+                canvas.translate(0f, 32f * 2) // titlebar
+                canvas.drawPicture(picture)
+            }
+        }
+        counter += 1
+        val loggingGraphics2D = LoggingGraphics2D(delegate = skikoGraphics2D, "$counter")
+        loggingGraphics2D.color = fg
+        loggingGraphics2D.background = bg
+        loggingGraphics2D.paint = fg
+        loggingGraphics2D.font = font
+        loggingGraphics2D
     }
     disableDoubleBuffering()
 }

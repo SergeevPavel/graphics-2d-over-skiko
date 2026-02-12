@@ -83,7 +83,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
     private var canvas: Canvas? = null
 
     /** Paint used for drawing on Skija canvas.  */
-    private var skijaPaint: org.jetbrains.skia.Paint? = null
+    private var skiaPaint: org.jetbrains.skia.Paint? = null
 
     /** The Skija save/restore count, used to restore the original clip in setClip().  */
     private var restoreCount: Int? = 0
@@ -95,11 +95,11 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
     private var awtFont = Font("SansSerif", Font.PLAIN, 12)
     private var typeface: Typeface? = null
     private val typefaceMap: MutableMap<TypefaceKey, Typeface?> = HashMap()
-    private var skijaFont: org.jetbrains.skia.Font? = null
+    private var skikoFont: org.jetbrains.skia.Font? = null
 
     /** The background color, used in the `clearRect()` method.  */
     private var background = Color.BLACK
-    private var transform = AffineTransform.getScaleInstance(2.0, 2.0) // todo set correct DPI
+    private var transform = AffineTransform.getScaleInstance(1.0, 1.0)
     private var composite: Composite = AlphaComposite.getInstance(
         AlphaComposite.SRC_OVER, 1.0f
     )
@@ -194,11 +194,11 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
     }
 
     private fun init() {
-        skijaPaint = org.jetbrains.skia.Paint()
-        skijaPaint!!.setARGB(255, 0, 0, 0)
+        skiaPaint = org.jetbrains.skia.Paint()
+        skiaPaint!!.setARGB(255, 0, 0, 0)
 
         typeface = FontMgr.default.legacyMakeTypeface(awtFont.name, FontStyle.NORMAL)
-        skijaFont = org.jetbrains.skia.Font(typeface, 12.0f)
+        skikoFont = org.jetbrains.skia.Font(typeface, 12.0f)
     }
 
     /**
@@ -283,7 +283,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
      */
     override fun draw(s: Shape) {
         Logger.debug { "draw(Shape) : $s" }
-        skijaPaint!!.mode = PaintMode.STROKE
+        skiaPaint!!.mode = PaintMode.STROKE
         if (s is Line2D) {
             val l = s
             canvas?.drawLine(
@@ -291,7 +291,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
                 l.y1.toFloat(),
                 l.x2.toFloat(),
                 l.y2.toFloat(),
-                skijaPaint!!
+                skiaPaint!!
             )
         } else if (s is Rectangle2D) {
             val r = s
@@ -304,7 +304,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
                     r.y.toFloat(),
                     r.width.toFloat(),
                     r.height.toFloat()
-                ), skijaPaint!!
+                ), skiaPaint!!
             )
         } else if (s is Ellipse2D) {
             val e = s
@@ -314,10 +314,10 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
                     e.minY.toFloat(),
                     e.width.toFloat(),
                     e.height.toFloat()
-                ), skijaPaint!!
+                ), skiaPaint!!
             )
         } else {
-            canvas?.drawPath(path(s), skijaPaint!!)
+            canvas?.drawPath(path(s), skiaPaint!!)
         }
     }
 
@@ -332,7 +332,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
      */
     override fun fill(s: Shape) {
         Logger.debug { "fill($s)" }
-        skijaPaint!!.mode = PaintMode.FILL
+        skiaPaint!!.mode = PaintMode.FILL
         if (s is Rectangle2D) {
             val r = s
             if (r.width < 0.0 || r.height < 0.0) {
@@ -344,7 +344,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
                     r.y.toFloat(),
                     r.width.toFloat(),
                     r.height.toFloat()
-                ), skijaPaint!!
+                ), skiaPaint!!
             )
         } else if (s is Ellipse2D) {
             val e = s
@@ -354,7 +354,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
                     e.minY.toFloat(),
                     e.width.toFloat(),
                     e.height.toFloat()
-                ), skijaPaint!!
+                ), skiaPaint!!
             )
         } else if (s is Path2D) {
             val path = path(s)
@@ -363,9 +363,9 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             } else {
                 path.fillMode = PathFillMode.WINDING
             }
-            canvas?.drawPath(path, skijaPaint!!)
+            canvas?.drawPath(path, skiaPaint!!)
         } else {
-            canvas?.drawPath(path(s), skijaPaint!!)
+            canvas?.drawPath(path(s), skiaPaint!!)
         }
     }
 
@@ -472,8 +472,8 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             throw NullPointerException("Null 'str' argument.")
         }
         Logger.debug { "drawString($str, $x, $y)" }
-        skijaPaint!!.mode = PaintMode.FILL
-        canvas?.drawString(str, x, y, skijaFont, skijaPaint!!)
+        skiaPaint!!.mode = PaintMode.FILL
+        canvas?.drawString(str, x, y, skikoFont, skiaPaint!!)
     }
 
     /**
@@ -594,19 +594,19 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
         composite = comp
         if (comp is AlphaComposite) {
             val ac = comp
-            skijaPaint!!.setAlphaf(ac.alpha)
+            skiaPaint!!.setAlphaf(ac.alpha)
             when (ac.rule) {
-                AlphaComposite.CLEAR -> skijaPaint!!.blendMode = BlendMode.CLEAR
-                AlphaComposite.SRC -> skijaPaint!!.blendMode = BlendMode.SRC
-                AlphaComposite.SRC_OVER -> skijaPaint!!.blendMode = BlendMode.SRC_OVER
-                AlphaComposite.DST_OVER -> skijaPaint!!.blendMode = BlendMode.DST_OVER
-                AlphaComposite.SRC_IN -> skijaPaint!!.blendMode = BlendMode.SRC_IN
-                AlphaComposite.DST_IN -> skijaPaint!!.blendMode = BlendMode.DST_IN
-                AlphaComposite.SRC_OUT -> skijaPaint!!.blendMode = BlendMode.SRC_OUT
-                AlphaComposite.DST_OUT -> skijaPaint!!.blendMode = BlendMode.DST_OUT
-                AlphaComposite.DST -> skijaPaint!!.blendMode = BlendMode.DST
-                AlphaComposite.SRC_ATOP -> skijaPaint!!.blendMode = BlendMode.SRC_ATOP
-                AlphaComposite.DST_ATOP -> skijaPaint!!.blendMode = BlendMode.DST_ATOP
+                AlphaComposite.CLEAR -> skiaPaint!!.blendMode = BlendMode.CLEAR
+                AlphaComposite.SRC -> skiaPaint!!.blendMode = BlendMode.SRC
+                AlphaComposite.SRC_OVER -> skiaPaint!!.blendMode = BlendMode.SRC_OVER
+                AlphaComposite.DST_OVER -> skiaPaint!!.blendMode = BlendMode.DST_OVER
+                AlphaComposite.SRC_IN -> skiaPaint!!.blendMode = BlendMode.SRC_IN
+                AlphaComposite.DST_IN -> skiaPaint!!.blendMode = BlendMode.DST_IN
+                AlphaComposite.SRC_OUT -> skiaPaint!!.blendMode = BlendMode.SRC_OUT
+                AlphaComposite.DST_OUT -> skiaPaint!!.blendMode = BlendMode.DST_OUT
+                AlphaComposite.DST -> skiaPaint!!.blendMode = BlendMode.DST
+                AlphaComposite.SRC_ATOP -> skiaPaint!!.blendMode = BlendMode.SRC_ATOP
+                AlphaComposite.DST_ATOP -> skiaPaint!!.blendMode = BlendMode.DST_ATOP
             }
         }
     }
@@ -623,7 +623,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
         if (paint is Color) {
             val c = paint
             color = c
-            skijaPaint!!.shader = Shader.makeColor(c.rgb)
+            skiaPaint!!.shader = Shader.makeColor(c.rgb)
         } else if (paint is LinearGradientPaint) {
             val lgp = paint
             val x0 = lgp.startPoint.x.toFloat()
@@ -638,7 +638,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             val gs =
                 GradientStyle.DEFAULT.withTileMode(awtCycleMethodToSkijaFilterTileMode(lgp.cycleMethod))
             val shader = Shader.makeLinearGradient(x0, y0, x1, y1, colors, fractions, gs)
-            skijaPaint!!.shader = shader
+            skiaPaint!!.shader = shader
         } else if (paint is RadialGradientPaint) {
             val rgp = paint
             val x = rgp.centerPoint.x.toFloat()
@@ -667,7 +667,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
                     gs
                 )
             }
-            skijaPaint!!.shader = shader
+            skiaPaint!!.shader = shader
         } else if (paint is GradientPaint) {
             val gp = paint
             val x1 = gp.point1.x.toFloat()
@@ -680,7 +680,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
                 gs = GradientStyle.DEFAULT.withTileMode(FilterTileMode.MIRROR)
             }
             val shader = Shader.makeLinearGradient(x1, y1, x2, y2, colors, null as FloatArray?, gs)
-            skijaPaint!!.shader = shader
+            skiaPaint!!.shader = shader
         }
     }
 
@@ -703,15 +703,15 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
                 return  // no change
             }
             val lineWidth = bs.lineWidth.toDouble()
-            skijaPaint!!.strokeWidth =
+            skiaPaint!!.strokeWidth =
                 Math.max(lineWidth, MIN_LINE_WIDTH).toFloat()
-            skijaPaint!!.strokeCap = awtToSkijaLineCap(bs.endCap)
-            skijaPaint!!.strokeJoin = awtToSkijaLineJoin(bs.lineJoin)
-            skijaPaint!!.strokeMiter = bs.miterLimit
+            skiaPaint!!.strokeCap = awtToSkijaLineCap(bs.endCap)
+            skiaPaint!!.strokeJoin = awtToSkijaLineJoin(bs.lineJoin)
+            skiaPaint!!.strokeMiter = bs.miterLimit
             if (bs.dashArray != null) {
-                skijaPaint!!.pathEffect = PathEffect.makeDash(bs.dashArray, bs.dashPhase)
+                skiaPaint!!.pathEffect = PathEffect.makeDash(bs.dashArray, bs.dashPhase)
             } else {
-                skijaPaint!!.pathEffect = null
+                skiaPaint!!.pathEffect = null
             }
         }
         stroke = s
@@ -1167,7 +1167,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             typeface = FontMgr.default.legacyMakeTypeface(fontName, awtFontStyleToSkijaFontStyle(font.style))
             typefaceMap[key] = typeface
         }
-        skijaFont = org.jetbrains.skia.Font(typeface, font.size.toFloat())
+        skikoFont = org.jetbrains.skia.Font(typeface, font.size.toFloat())
     }
 
     /**
@@ -1178,7 +1178,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
      * @return The font metrics.
      */
     override fun getFontMetrics(f: Font): FontMetrics {
-        return SkikoFontMetrics(skijaFont, awtFont)
+        return SkikoFontMetrics(skikoFont, awtFont)
     }
 
     /**
