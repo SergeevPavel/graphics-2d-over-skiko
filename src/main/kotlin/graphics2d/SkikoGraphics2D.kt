@@ -1222,19 +1222,19 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
      * @see .getClip
      */
     override fun setClip(shape: Shape?) {
-//        Logger.debug { "setClip($shape)" }
-//        // null is handled fine here...
-//        // a new clip is being set, so first restore the original clip (and save
-//        // it again for future restores)
-//        canvas?.restoreToCount(restoreCount)
-//        restoreCount = canvas?.save()
-//        // restoring the clip might also reset the transform, so reapply it
-//        setTransform(getTransform())
-//        clip = transform.createTransformedShape(shape)
-//        // now apply on the Skija canvas
-//        if (shape != null) {
-//            canvas?.clipPath(path(shape))
-//        }
+        Logger.debug { "setClip($shape)" }
+        // null is handled fine here...
+        // a new clip is being set, so first restore the original clip (and save
+        // it again for future restores)
+        canvas?.restoreToCount(restoreCount!!)
+        restoreCount = canvas?.save()
+        // restoring the clip might also reset the transform, so reapply it
+        setTransform(getTransform())
+        clip = transform.createTransformedShape(shape)
+        // now apply on the Skija canvas
+        if (shape != null) {
+            canvas?.clipPath(path(shape))
+        }
     }
 
     /**
@@ -1247,8 +1247,8 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
      * @param height  the height.
      */
     override fun clipRect(x: Int, y: Int, width: Int, height: Int) {
-//        Logger.debug { "clipRect($x, $y, $width, $height)" }
-//        clip(rect(x, y, width, height)!!)
+        Logger.debug { "clipRect($x, $y, $width, $height)" }
+        clip(rect(x, y, width, height)!!)
     }
 
     /**
@@ -1262,8 +1262,8 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
      * @see .getClip
      */
     override fun setClip(x: Int, y: Int, width: Int, height: Int) {
-//        Logger.debug { "setClip($x, $y, $width, $height)" }
-//        setClip(rect(x, y, width, height)!!)
+        Logger.debug { "setClip($x, $y, $width, $height)" }
+        setClip(rect(x, y, width, height)!!)
     }
 
     /**
@@ -1281,24 +1281,24 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
      * @param s  the clip shape (`null` not permitted).
      */
     override fun clip(s: Shape) {
-//        var s = s
-//        Logger.debug { "clip($s)" }
-//        if (s is Line2D) {
-//            s = s.getBounds2D()
-//        }
-//        if (clip == null) {
-//            setClip(s)
-//            return
-//        }
-//        if (!s.intersects(getClip()?.bounds2D)) {
-//            setClip(Rectangle2D.Double())
-//        } else {
-//            val a1 = Area(s)
-//            val a2 = Area(getClip())
-//            a1.intersect(a2)
-//            setClip(Path2D.Double(a1))
-//            canvas?.clipPath(path(s))
-//        }
+        var s = s
+        Logger.debug { "clip($s)" }
+        if (s is Line2D) {
+            s = s.getBounds2D()
+        }
+        if (clip == null) {
+            setClip(s)
+            return
+        }
+        if (!s.intersects(getClip()?.bounds2D)) {
+            setClip(Rectangle2D.Double())
+        } else {
+            val a1 = Area(s)
+            val a2 = Area(getClip())
+            a1.intersect(a2)
+            setClip(Path2D.Double(a1))
+            canvas?.clipPath(path(s))
+        }
     }
 
     /**
@@ -1312,8 +1312,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
      * @param dy  the delta y.
      */
     override fun copyArea(x: Int, y: Int, width: Int, height: Int, dx: Int, dy: Int) {
-        TODO("Implement me!!!")
-        Logger.debug { "copyArea($x, $y, $width, $height, $dx, $dy) - NOT IMPLEMENTED" }
+        Logger.error { "copyArea($x, $y, $width, $height, $dx, $dy) - NOT IMPLEMENTED" }
         // FIXME: implement this, low priority
     }
 

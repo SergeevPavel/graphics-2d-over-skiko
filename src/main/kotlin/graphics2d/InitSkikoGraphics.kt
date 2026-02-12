@@ -57,7 +57,9 @@ fun withSkiaCanvas(
                     }
                 }
             } catch (e: Throwable) {
-                println(e)
+                Logger.error {
+                    "Exception in rendering task: $e"
+                }
             }
         }
     })
