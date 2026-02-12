@@ -1,5 +1,6 @@
 package org.example
 
+import org.example.graphics2d.withSkiaCanvas
 import java.awt.*
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent

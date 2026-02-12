@@ -1,5 +1,5 @@
 @file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
-package org.example
+package org.example.graphics2d
 
 import sun.awt.ConstrainableGraphics
 import java.awt.AlphaComposite
@@ -26,7 +26,6 @@ import java.awt.image.ImageObserver
 import java.awt.image.RenderedImage
 import java.awt.image.renderable.RenderableImage
 import java.text.AttributedCharacterIterator
-import kotlin.collections.set
 
 class LoggingGraphics2D(val delegate: Graphics2D, val id: String) : Graphics2D(), ConstrainableGraphics {
     private fun log(method: String, vararg args: Any?) {
@@ -76,7 +75,12 @@ class LoggingGraphics2D(val delegate: Graphics2D, val id: String) : Graphics2D()
         return BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics().deviceConfiguration
     }
 
-    override fun getFontRenderContext(): FontRenderContext { log("getFontRenderContext"); return FontRenderContext(null, false, false) }
+    override fun getFontRenderContext(): FontRenderContext { log("getFontRenderContext"); return FontRenderContext(
+        null,
+        false,
+        false
+    )
+    }
 
     // --- Composite, Paint, Stroke ---
     override fun setComposite(comp: Composite) { log("setComposite", comp); currentComposite = comp }
@@ -101,7 +105,8 @@ class LoggingGraphics2D(val delegate: Graphics2D, val id: String) : Graphics2D()
     override fun scale(sx: Double, sy: Double) { log("scale", sx, sy); currentTransform.scale(sx, sy) }
     override fun shear(shx: Double, shy: Double) { log("shear", shx, shy); currentTransform.shear(shx, shy) }
     override fun transform(tx: AffineTransform) { log("transform", tx); currentTransform.concatenate(tx) }
-    override fun setTransform(tx: AffineTransform) { log("setTransform", tx); currentTransform = AffineTransform(tx) }
+    override fun setTransform(tx: AffineTransform) { log("setTransform", tx); currentTransform = AffineTransform(tx)
+    }
     override fun getTransform(): AffineTransform = AffineTransform(currentTransform)
 
     // --- Color, Font ---
@@ -121,7 +126,9 @@ class LoggingGraphics2D(val delegate: Graphics2D, val id: String) : Graphics2D()
     // --- Clip ---
     override fun getClip(): Shape? = currentClip
     override fun setClip(clip: Shape?) { log("setClip", clip); currentClip = clip }
-    override fun setClip(x: Int, y: Int, w: Int, h: Int) { log("setClip", x, y, w, h); currentClip = Rectangle(x, y, w, h) }
+    override fun setClip(x: Int, y: Int, w: Int, h: Int) { log("setClip", x, y, w, h); currentClip =
+        Rectangle(x, y, w, h)
+    }
     override fun clip(s: Shape) { log("clip", s); currentClip = s }
     override fun clipRect(x: Int, y: Int, w: Int, h: Int) { log("clipRect", x, y, w, h) }
     override fun getClipBounds(): Rectangle? { log("getClipBounds"); return (currentClip as? Rectangle) ?: currentClip?.bounds }

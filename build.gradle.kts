@@ -17,6 +17,7 @@ dependencies {
     testImplementation(kotlin("test"))
     implementation("org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:0.9.43")
     implementation("org.jetbrains.skiko:skiko-awt:0.9.43")
+    implementation(files("libs/SwingMark.jar"))
 }
 
 application {
