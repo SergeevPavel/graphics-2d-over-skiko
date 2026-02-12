@@ -86,7 +86,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
     private var skijaPaint: org.jetbrains.skia.Paint? = null
 
     /** The Skija save/restore count, used to restore the original clip in setClip().  */
-    private var restoreCount = 0
+    private var restoreCount: Int? = 0
     private var awtPaint: Paint? = null
 
     /** Stores the AWT Color object for get/setColor().  */
@@ -209,7 +209,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
     private fun initCanvas(canvas: Canvas) {
         // save the original clip settings so they can be restored later in setClip()
         this.canvas = canvas
-        restoreCount = this.canvas!!.save()
+        restoreCount = this.canvas?.save()
         Logger.debug { "$canvas save canvas to: $restoreCount" }
     }
 
@@ -286,7 +286,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
         skijaPaint!!.mode = PaintMode.STROKE
         if (s is Line2D) {
             val l = s
-            canvas!!.drawLine(
+            canvas?.drawLine(
                 l.x1.toFloat(),
                 l.y1.toFloat(),
                 l.x2.toFloat(),
@@ -298,7 +298,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             if (r.width < 0.0 || r.height < 0.0) {
                 return
             }
-            canvas!!.drawRect(
+            canvas?.drawRect(
                 Rect.makeXYWH(
                     r.x.toFloat(),
                     r.y.toFloat(),
@@ -308,7 +308,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             )
         } else if (s is Ellipse2D) {
             val e = s
-            canvas!!.drawOval(
+            canvas?.drawOval(
                 Rect.makeXYWH(
                     e.minX.toFloat(),
                     e.minY.toFloat(),
@@ -317,7 +317,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
                 ), skijaPaint!!
             )
         } else {
-            canvas!!.drawPath(path(s), skijaPaint!!)
+            canvas?.drawPath(path(s), skijaPaint!!)
         }
     }
 
@@ -338,7 +338,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             if (r.width < 0.0 || r.height < 0.0) {
                 return
             }
-            canvas!!.drawRect(
+            canvas?.drawRect(
                 Rect.makeXYWH(
                     r.x.toFloat(),
                     r.y.toFloat(),
@@ -348,7 +348,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             )
         } else if (s is Ellipse2D) {
             val e = s
-            canvas!!.drawOval(
+            canvas?.drawOval(
                 Rect.makeXYWH(
                     e.minX.toFloat(),
                     e.minY.toFloat(),
@@ -363,9 +363,9 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             } else {
                 path.fillMode = PathFillMode.WINDING
             }
-            canvas!!.drawPath(path, skijaPaint!!)
+            canvas?.drawPath(path, skijaPaint!!)
         } else {
-            canvas!!.drawPath(path(s), skijaPaint!!)
+            canvas?.drawPath(path(s), skijaPaint!!)
         }
     }
 
@@ -473,7 +473,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
         }
         Logger.debug { "drawString($str, $x, $y)" }
         skijaPaint!!.mode = PaintMode.FILL
-        canvas!!.drawString(str, x, y, skijaFont, skijaPaint!!)
+        canvas?.drawString(str, x, y, skijaFont, skijaPaint!!)
     }
 
     /**
@@ -865,7 +865,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
     override fun translate(tx: Double, ty: Double) {
         Logger.debug { "translate($tx, $ty)" }
         transform.translate(tx, ty)
-        canvas!!.translate(tx.toFloat(), ty.toFloat())
+        canvas?.translate(tx.toFloat(), ty.toFloat())
     }
 
     /**
@@ -876,7 +876,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
     override fun rotate(theta: Double) {
         Logger.debug { "rotate($theta)" }
         transform.rotate(theta)
-        canvas!!.rotate(Math.toDegrees(theta).toFloat())
+        canvas?.rotate(Math.toDegrees(theta).toFloat())
     }
 
     /**
@@ -902,7 +902,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
     override fun scale(sx: Double, sy: Double) {
         Logger.debug { "scale($sx, $sy)" }
         transform.scale(sx, sy)
-        canvas!!.scale(sx.toFloat(), sy.toFloat())
+        canvas?.scale(sx.toFloat(), sy.toFloat())
     }
 
     /**
@@ -919,7 +919,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
     override fun shear(shx: Double, shy: Double) {
         Logger.debug { "shear($shx, $shy)" }
         transform.shear(shx, shy)
-        canvas!!.skew(shx.toFloat(), shy.toFloat())
+        canvas?.skew(shx.toFloat(), shy.toFloat())
     }
 
     /**
@@ -974,7 +974,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             0f,
             1f
         )
-        canvas!!.setMatrix(m33)
+        canvas?.setMatrix(m33)
     }
 
     override fun getPaint(): Paint {
@@ -1226,14 +1226,14 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
 //        // null is handled fine here...
 //        // a new clip is being set, so first restore the original clip (and save
 //        // it again for future restores)
-//        canvas!!.restoreToCount(restoreCount)
-//        restoreCount = canvas!!.save()
+//        canvas?.restoreToCount(restoreCount)
+//        restoreCount = canvas?.save()
 //        // restoring the clip might also reset the transform, so reapply it
 //        setTransform(getTransform())
 //        clip = transform.createTransformedShape(shape)
 //        // now apply on the Skija canvas
 //        if (shape != null) {
-//            canvas!!.clipPath(path(shape))
+//            canvas?.clipPath(path(shape))
 //        }
     }
 
@@ -1297,7 +1297,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
 //            val a2 = Area(getClip())
 //            a1.intersect(a2)
 //            setClip(Path2D.Double(a1))
-//            canvas!!.clipPath(path(s))
+//            canvas?.clipPath(path(s))
 //        }
     }
 
@@ -1742,7 +1742,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             g2.dispose()
         }
         val skijaImage = convertToSkijaImage(buffered)
-        canvas!!.drawImageRect(
+        canvas?.drawImageRect(
             skijaImage,
             Rect(x.toFloat(), y.toFloat(), (x + width).toFloat(), (y + height).toFloat())
         )
@@ -1880,17 +1880,40 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
         return drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, observer)
     }
 
+    private fun dispatchIfNeeded(block: () -> Unit) {
+        if (EventQueue.isDispatchThread()) {
+            block()
+        } else {
+            EventQueue.invokeLater(block)
+        }
+    }
+
     /**
      * This method does nothing.
      */
     override fun dispose() {
-        Logger.debug { "dispose()" }
-        canvas!!.restoreToCount(restoreCount)
-        Logger.debug { "restored $canvas to count $restoreCount" }
-        pictureRecorder?.let {
-            onDispose(it.finishRecordingAsPicture())
-            canvas = null
-            it.close()
+        // Sometimes it's called on Finalized thread
+        dispatchIfNeeded {
+            Logger.debug { "dispose()" }
+            if (canvas == null) {
+                return@dispatchIfNeeded
+            }
+            restoreCount?.let {
+                canvas?.restoreToCount(it)
+                Logger.debug { "restored $canvas to count $restoreCount" }
+            } ?: run {
+                Logger.error { "Failed restore to count" }
+            }
+            pictureRecorder?.let {
+                assert(it.recordingCanvas != null) {
+                    "There is no recording in progress"
+                }
+                val picture = it.finishRecordingAsPicture()
+                Logger.debug { "Called finishRecordingAsPicture() on $it" }
+                onDispose(picture)
+                pictureRecorder = null
+                canvas = null
+            }
         }
     }
 
@@ -1899,6 +1922,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
         Logger.debug { "constrain($x, $y, $w, $h)" }
         pictureRecorder?.let {
             val canvas = it.beginRecording(x.toFloat(), y.toFloat(), 2f * (x.toFloat() + w.toFloat()), 2f * (y.toFloat() + h.toFloat()))
+            Logger.debug { "Called beginRecording() on $it" }
             initCanvas(canvas)
         }
     }

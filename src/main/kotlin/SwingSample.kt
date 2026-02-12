@@ -1,6 +1,7 @@
 @file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
 package org.example
 
+import graphics2d.Logger
 import graphics2d.SkikoGraphics2D
 import org.jetbrains.skia.ColorSpace
 import sun.java2d.SunGraphics2D
@@ -54,8 +55,6 @@ fun withSkiaCanvas(
 
                 org.jetbrains.skia.DirectContext.makeMetal(device, queue).use { grCtx ->
                     val sd = ((g2d as SunGraphics2D).surfaceData as MTLSurfaceData)
-//                    println("nativeWidth=${sd.nativeWidth} nativeHeight=${sd.nativeHeight}")
-//                    println("height=${sd.height} width=${sd.width}")
                     val textureWidth = sd.nativeWidth
                     val textureHeight = sd.nativeHeight
                     org.jetbrains.skia.BackendRenderTarget.makeMetal(textureWidth, textureHeight, texture).use { backendRT ->
@@ -85,8 +84,15 @@ fun swingSample() {
         val frame = JFrame("Graphics2D over Skiko").apply {
             overrideGraphics2D { surfaceData, fg, bg, font ->
                 val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
+                (surfaceData as? MTLSurfaceData)?.let {
+                    Logger.debug { "Surface data width: ${surfaceData.width}, height: ${surfaceData.height}" }
+                } ?: run {
+                    Logger.debug { "Unsupported surface data type: $surfaceData" }
+                }
                 val skikoGraphics2D = SkikoGraphics2D { picture ->
                     withSkiaCanvas(sunGraphics2D) { canvas, _, _ ->
+                        canvas.clear(org.jetbrains.skia.Color.MAGENTA)
+                        canvas.translate(0f, 32f * 2) // titlebar
                         canvas.drawPicture(picture)
                     }
                 }
@@ -95,13 +101,11 @@ fun swingSample() {
                 skikoGraphics2D.paint = fg
                 skikoGraphics2D.font = font
                 skikoGraphics2D
-//                LoggingGraphics2D(delegate = gr, "LoggingGraphics2D[${counter++}]")
 
             }
             RepaintManager.currentManager(this)?.setDoubleBufferingEnabled(false)
             defaultCloseOperation = JFrame.EXIT_ON_CLOSE
             setSize(400, 200)
-//            contentPane.add(skikoSpinner())
             contentPane.add(createUiPanel())
             isVisible = true
         }

@@ -41,7 +41,7 @@ internal enum class LogLevel {
 
 class DefaultConsoleLogger(
     override val isTraceEnabled: Boolean = false,
-    override val isDebugEnabled: Boolean = true,
+    override val isDebugEnabled: Boolean = false,
     override val isInfoEnabled: Boolean = true,
     override val isWarnEnabled: Boolean = true,
     override val isErrorEnabled: Boolean = true,
@@ -75,7 +75,7 @@ class DefaultConsoleLogger(
     }
 
     override fun debug(message: String) {
-        println("${logMessagePrefix()} debug: $message")
+        println("${logMessagePrefix()} ${Thread.currentThread().name} debug: $message")
     }
 
     override fun debug(t: Throwable, message: String) {
