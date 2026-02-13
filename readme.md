@@ -1,0 +1,1 @@
+Should be used with https://github.com/SergeevPavel/JetBrainsRuntime/tree/pavel.sergeev/graphics2d-factory
