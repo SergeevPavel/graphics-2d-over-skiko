@@ -1382,13 +1382,13 @@ class SkiaGraphics2D : Graphics2D /*, ConstrainableGraphics */ {
      * @param dy  the delta y.
      */
     override fun copyArea(x: Int, y: Int, width: Int, height: Int, dx: Int, dy: Int) {
-//        val scaleX = transform.scaleX
-//        val scaleY = transform.scaleY
-        val nx = x * 2 + transform.translateX.toInt()
-        val ny = y * 2 + transform.translateY.toInt()
-        val bitmap = Bitmap().apply { allocN32Pixels(width * 2, height * 2) }
+        val scaleX = transform.scaleX
+        val scaleY = transform.scaleY
+        val nx = (x * scaleX + transform.translateX).toInt()
+        val ny = (y * scaleY + transform.translateY).toInt()
+        val bitmap = Bitmap().apply { allocN32Pixels((width * scaleX).toInt(), (height * scaleY).toInt()) }
         canvas?.readPixels(bitmap, nx, ny)
-        canvas?.writePixels(bitmap, (nx + dx * 2), (ny + dy * 2))
+        canvas?.writePixels(bitmap, (nx + dx * scaleX).toInt(), (ny + dy * scaleY).toInt())
     }
 
     /**
