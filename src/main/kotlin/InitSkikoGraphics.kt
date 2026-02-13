@@ -21,8 +21,17 @@ import javax.swing.JFrame
 import javax.swing.RepaintManager
 
 fun Window.overrideGraphics2D(factory: (surfaceData: SurfaceData, fg: Color, bg: Color, font: Font) -> Graphics?) {
-    this.setGraphicsFactory { surfaceData, fg, bg, font ->
-        factory(surfaceData, fg, bg, font)
+    try {
+        this.setGraphicsFactory { surfaceData, fg, bg, font ->
+            try {
+                factory(surfaceData, fg, bg, font)
+            } catch (e: Throwable) {
+                Logger.error { "Failed to create graphics for surfaceData=$surfaceData, fg=$fg, bg=$bg, font=$font: $e" }
+                null
+            }
+        }
+    } catch (e: Throwable) {
+        Logger.error { "Failed to override graphics factory: $e" }
     }
 }
 
@@ -69,8 +78,8 @@ fun withSkiaCanvas(
 }
 
 fun JFrame.makeUseSkikoGraphics() {
-//    makeUseSkikoGraphics1WithPicture()
-    makeUseSkikoGraphics2WithSurface()
+    makeUseSkikoGraphics1WithPicture()
+//    makeUseSkikoGraphics2WithSurface()
 //    makeUseSkikoGraphics2WithPicture()
 }
 
@@ -81,18 +90,23 @@ fun JFrame.makeUseSkikoGraphics1WithPicture() {
             Logger.debug { "Surface data width: ${surfaceData.width}, height: ${surfaceData.height}" }
         } ?: run {
             Logger.debug { "Unsupported surface data type: $surfaceData" }
+            return@overrideGraphics2D null
         }
         if (!EventQueue.isDispatchThread()) return@overrideGraphics2D null
         assert(EventQueue.isDispatchThread()) {
             "Current thread is not event dispatch thread: ${Thread.currentThread()}"
         }
-        val skikoGraphics2D = SkikoGraphics2D { x, y, picture ->
+        val pictureRecorder = org.jetbrains.skia.PictureRecorder()
+        val width = surfaceData.width.toFloat()
+        val height = surfaceData.height.toFloat()
+        assert(width > 0 && height > 0) { "Surface data width and height must be positive: $width, $height" }
+        val skikoGraphics2D = SkikoGraphics2D(pictureRecorder.beginRecording(0f, 0f, width, height, null))
+        skikoGraphics2D.onDispose = {
+            val picture = pictureRecorder.finishRecordingAsPicture()
             withSkiaCanvas(sunGraphics2D) { canvas, directContext, scale ->
                 // Swing assumes that the content persists between frames
                 // even when double buffering is enabled
-                // canvas.clear(org.jetbrains.skia.Color.MAGENTA)
-                canvas.translate(0f, 32f * scale) // titlebar
-                canvas.translate(x.toFloat() * scale, y.toFloat() * scale)
+                canvas.clear(org.jetbrains.skia.Color.MAGENTA)
                 canvas.drawPicture(picture)
             }
         }
@@ -158,32 +172,32 @@ fun JFrame.makeUseSkikoGraphics2WithPicture() {
 
 var counter = 0
 
-fun JFrame.makeUseLoggingGraphics() {
-    overrideGraphics2D { surfaceData, fg, bg, font ->
-        val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
-        (surfaceData as? MTLSurfaceData)?.let {
-            Logger.debug { "Surface data width: ${surfaceData.width}, height: ${surfaceData.height}" }
-        } ?: run {
-            Logger.debug { "Unsupported surface data type: $surfaceData" }
-        }
-        val skikoGraphics2D = SkikoGraphics2D { x, y, picture ->
-            withSkiaCanvas(sunGraphics2D) { canvas, _, _ ->
-                canvas.clear(org.jetbrains.skia.Color.MAGENTA)
-                canvas.translate(0f, 32f * 2) // titlebar
-                canvas.drawPicture(picture)
-            }
-        }
-        counter += 1
-        val loggingGraphics2D =
-            LoggingGraphics2D(delegate = skikoGraphics2D, "$counter")
-        loggingGraphics2D.color = fg
-        loggingGraphics2D.background = bg
-        loggingGraphics2D.paint = fg
-        loggingGraphics2D.font = font
-        loggingGraphics2D
-    }
-    disableDoubleBuffering()
-}
+//fun JFrame.makeUseLoggingGraphics() {
+//    overrideGraphics2D { surfaceData, fg, bg, font ->
+//        val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
+//        (surfaceData as? MTLSurfaceData)?.let {
+//            Logger.debug { "Surface data width: ${surfaceData.width}, height: ${surfaceData.height}" }
+//        } ?: run {
+//            Logger.debug { "Unsupported surface data type: $surfaceData" }
+//        }
+//        val skikoGraphics2D = SkikoGraphics2D { x, y, picture ->
+//            withSkiaCanvas(sunGraphics2D) { canvas, _, _ ->
+//                canvas.clear(org.jetbrains.skia.Color.MAGENTA)
+//                canvas.translate(0f, 32f * 2) // titlebar
+//                canvas.drawPicture(picture)
+//            }
+//        }
+//        counter += 1
+//        val loggingGraphics2D =
+//            LoggingGraphics2D(delegate = skikoGraphics2D, "$counter")
+//        loggingGraphics2D.color = fg
+//        loggingGraphics2D.background = bg
+//        loggingGraphics2D.paint = fg
+//        loggingGraphics2D.font = font
+//        loggingGraphics2D
+//    }
+//    disableDoubleBuffering()
+//}
 
 fun JFrame.disableDoubleBuffering() {
     RepaintManager.currentManager(this)?.setDoubleBufferingEnabled(false)

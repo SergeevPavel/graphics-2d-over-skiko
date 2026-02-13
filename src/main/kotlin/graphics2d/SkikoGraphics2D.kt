@@ -63,7 +63,7 @@ import java.util.function.Function
  * An implementation of the Graphics2D API that targets the Skija graphics API
  * (https://github.com/JetBrains/skija).
  */
-class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
+class SkikoGraphics2D : Graphics2D /* , ConstrainableGraphics */ {
     /** Rendering hints.  */
     private val hints = RenderingHints(
         RenderingHints.KEY_ANTIALIASING,
@@ -185,16 +185,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
         initCanvas(canvas)
     }
 
-    var pictureRecorder: PictureRecorder? = null
-    var onDispose: (Int, Int, picture: Picture) -> Unit = {
-        _, _, _ ->
-    }
-
-    constructor(onDispose: (Int, Int, picture: Picture) -> Unit) {
-        this.onDispose = onDispose
-        init()
-        pictureRecorder = PictureRecorder()
-    }
+    var onDispose: () -> Unit = { }
 
     private fun init() {
         skiaPaint = org.jetbrains.skia.Paint()
@@ -1315,7 +1306,7 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
      * @param dy  the delta y.
      */
     override fun copyArea(x: Int, y: Int, width: Int, height: Int, dx: Int, dy: Int) {
-        Logger.error { "copyArea($x, $y, $width, $height, $dx, $dy) - NOT IMPLEMENTED" }
+//        Logger.error { "copyArea($x, $y, $width, $height, $dx, $dy) - NOT IMPLEMENTED" }
         // FIXME: implement this, low priority
     }
 
@@ -1898,40 +1889,30 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
             } ?: run {
                 Logger.error { "Failed restore to count" }
             }
-            pictureRecorder?.let {
-                assert(it.recordingCanvas != null) {
-                    "There is no recording in progress"
-                }
-                val picture = it.finishRecordingAsPicture()
-                Logger.debug { "Called finishRecordingAsPicture() on $it" }
-                onDispose(originX, originY, picture)
-                pictureRecorder = null
-                canvas = null
-            }
+            onDispose()
+            canvas = null
         }
     }
 
-    var originX = 0
-    var originY = 0
 
-    override fun constrain(x: Int, y: Int, w: Int, h: Int) {
-        assert(canvas == null)
-        Logger.debug { "constrain($x, $y, $w, $h)" }
-        originX = x
-        originY = y
-        pictureRecorder?.let {
-            // todo [pavel.sergeev] why multiply by two?
-            val canvas = it.beginRecording(Rect.makeXYWH(x.toFloat(), y.toFloat(), 2f * w.toFloat(), 2f *  h.toFloat()))
-            Logger.debug { "Called beginRecording() on $it" }
-            initCanvas(canvas)
-        }
-    }
-
-    override fun constrain(x: Int, y: Int, width: Int, height: Int, visibleRegion: Region?) {
-        assert(canvas == null)
-        Logger.debug { "constrain($x, $y, $width, $height, Region)" }
-        constrain(x, y, width, height)
-    }
+//    override fun constrain(x: Int, y: Int, w: Int, h: Int) {
+//        assert(canvas == null)
+//        Logger.debug { "constrain($x, $y, $w, $h)" }
+//        originX = x
+//        originY = y
+//        pictureRecorder?.let {
+//            // todo [pavel.sergeev] why multiply by two?
+//            val canvas = it.beginRecording(Rect.makeXYWH(x.toFloat(), y.toFloat(), 2f * w.toFloat(), 2f *  h.toFloat()))
+//            Logger.debug { "Called beginRecording() on $it" }
+//            initCanvas(canvas)
+//        }
+//    }
+//
+//    override fun constrain(x: Int, y: Int, width: Int, height: Int, visibleRegion: Region?) {
+//        assert(canvas == null)
+//        Logger.debug { "constrain($x, $y, $width, $height, Region)" }
+//        constrain(x, y, width, height)
+//    }
 
     companion object {
 
