@@ -34,6 +34,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 tasks.withType<JavaExec> {
     jvmArgs(
+        "-ea",
         "--enable-preview",
         "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
         "--add-exports", "java.desktop/sun.awt.image=ALL-UNNAMED",
