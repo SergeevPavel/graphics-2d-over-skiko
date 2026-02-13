@@ -1,10 +1,7 @@
 @file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
 
-import Logger
 import graphics2d.SkikoGraphics2D
-import org.example.graphics2d.LoggingGraphics2D
 import org.jetbrains.skia.ColorSpace
-import org.jetbrains.skia.Rect
 import org.jfree.skija.SkiaGraphics2D
 import sun.java2d.SunGraphics2D
 import sun.java2d.SurfaceData
@@ -106,7 +103,7 @@ fun JFrame.makeUseSkikoGraphics1WithPicture() {
             withSkiaCanvas(sunGraphics2D) { canvas, directContext, scale ->
                 // Swing assumes that the content persists between frames
                 // even when double buffering is enabled
-                canvas.clear(org.jetbrains.skia.Color.MAGENTA)
+//                canvas.clear(org.jetbrains.skia.Color.MAGENTA)
                 canvas.drawPicture(picture)
             }
         }
@@ -146,26 +143,35 @@ fun JFrame.makeUseSkikoGraphics2WithPicture() {
     overrideGraphics2D { surfaceData, fg, bg, font ->
         val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
         (surfaceData as? MTLSurfaceData)?.let {
-            assert(EventQueue.isDispatchThread())
-            val pictureRecorder = org.jetbrains.skia.PictureRecorder()
-            val pictureCanvas = pictureRecorder.beginRecording(Rect.makeXYWH(0f, 0f, surfaceData.width.toFloat(), surfaceData.height.toFloat()), null)
-            val skikoGraphics2D = SkiaGraphics2D(pictureCanvas)
-            skikoGraphics2D.onDispose = {
-                assert(EventQueue.isDispatchThread())
-                val picture = pictureRecorder.finishRecordingAsPicture()
-                pictureRecorder.close()
-                withSkiaCanvas(sunGraphics2D) { canvas, directContext, scale ->
-                    //canvas.clear(org.jetbrains.skia.Color.MAGENTA)
-                    canvas.drawPicture(picture)
-                }
-            }
-            skikoGraphics2D.transform(sunGraphics2D.transform)
-            skikoGraphics2D.color = fg
-            skikoGraphics2D.background = bg
-            skikoGraphics2D.paint = fg
-            skikoGraphics2D.font = font
-            skikoGraphics2D
+            Logger.debug { "Surface data width: ${surfaceData.width}, height: ${surfaceData.height}" }
+        } ?: run {
+            Logger.debug { "Unsupported surface data type: $surfaceData" }
+            return@overrideGraphics2D null
         }
+        if (!EventQueue.isDispatchThread()) return@overrideGraphics2D null
+        assert(EventQueue.isDispatchThread()) {
+            "Current thread is not event dispatch thread: ${Thread.currentThread()}"
+        }
+        val pictureRecorder = org.jetbrains.skia.PictureRecorder()
+        val width = surfaceData.width.toFloat()
+        val height = surfaceData.height.toFloat()
+        assert(width > 0 && height > 0) { "Surface data width and height must be positive: $width, $height" }
+        val skiaGraphics2D = SkiaGraphics2D(pictureRecorder.beginRecording(0f, 0f, width, height, null))
+        skiaGraphics2D.onDispose = {
+            val picture = pictureRecorder.finishRecordingAsPicture()
+            withSkiaCanvas(sunGraphics2D) { canvas, directContext, scale ->
+                // Swing assumes that the content persists between frames
+                // even when double buffering is enabled
+                canvas.clear(org.jetbrains.skia.Color.MAGENTA)
+                canvas.drawPicture(picture)
+            }
+        }
+        skiaGraphics2D.transform(sunGraphics2D.transform)
+        skiaGraphics2D.color = fg
+        skiaGraphics2D.background = bg
+        skiaGraphics2D.paint = fg
+        skiaGraphics2D.font = font
+        skiaGraphics2D
     }
     disableDoubleBuffering()
 }
