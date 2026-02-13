@@ -1,7 +1,14 @@
 @file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
 
 import graphics2d.SkikoGraphics2D
+import org.jetbrains.skia.BackendRenderTarget
+import org.jetbrains.skia.Canvas
 import org.jetbrains.skia.ColorSpace
+import org.jetbrains.skia.DirectContext
+import org.jetbrains.skia.PictureRecorder
+import org.jetbrains.skia.Surface
+import org.jetbrains.skia.SurfaceColorFormat
+import org.jetbrains.skia.SurfaceOrigin
 import org.jfree.skija.SkiaGraphics2D
 import sun.java2d.SunGraphics2D
 import sun.java2d.SurfaceData
@@ -34,7 +41,7 @@ fun Window.overrideGraphics2D(factory: (surfaceData: SurfaceData, fg: Color, bg:
 
 fun withSkiaCanvas(
     g2d: Graphics2D,
-    block: (org.jetbrains.skia.Canvas, org.jetbrains.skia.DirectContext, Float) -> Unit
+    block: (Canvas, DirectContext, Float) -> Unit
 ) {
     g2d.runExternal(object : RenderingTask {
         override fun run(surfaceType: String?, pointers: List<Long>, names: List<String?>) {
@@ -47,23 +54,24 @@ fun withSkiaCanvas(
                 val gc = GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
                 val scale = gc.defaultTransform.scaleX.toFloat()
 
-                org.jetbrains.skia.DirectContext.makeMetal(device, queue).use { grCtx ->
+                DirectContext.makeMetal(device, queue).use { grCtx ->
                     val sd = ((g2d as SunGraphics2D).surfaceData as MTLSurfaceData)
                     val textureWidth = sd.nativeWidth
                     val textureHeight = sd.nativeHeight
-                    org.jetbrains.skia.BackendRenderTarget.makeMetal(textureWidth, textureHeight, texture).use { backendRT ->
-                        org.jetbrains.skia.Surface.makeFromBackendRenderTarget(
-                            grCtx,
-                            backendRT,
-                            org.jetbrains.skia.SurfaceOrigin.TOP_LEFT,
-                            org.jetbrains.skia.SurfaceColorFormat.BGRA_8888,
-                            colorSpace = ColorSpace.sRGB,
-                            null
-                        )?.use { surface ->
-                            block(surface.canvas, grCtx, scale)
-                            grCtx.flushAndSubmit(surface)
+                    BackendRenderTarget.makeMetal(textureWidth, textureHeight, texture)
+                        .use { backendRT ->
+                            Surface.makeFromBackendRenderTarget(
+                                grCtx,
+                                backendRT,
+                                SurfaceOrigin.TOP_LEFT,
+                                SurfaceColorFormat.BGRA_8888,
+                                colorSpace = ColorSpace.sRGB,
+                                null
+                            )?.use { surface ->
+                                block(surface.canvas, grCtx, scale)
+                                grCtx.flushAndSubmit(surface)
+                            }
                         }
-                    }
                 }
             } catch (e: Throwable) {
                 Logger.error {
@@ -75,8 +83,8 @@ fun withSkiaCanvas(
 }
 
 fun JFrame.makeUseSkikoGraphics() {
-    makeUseSkikoGraphics1WithPicture()
-//    makeUseSkikoGraphics2WithSurface()
+//    makeUseSkikoGraphics1WithPicture()
+    makeUseSkikoGraphics2WithSurface()
 //    makeUseSkikoGraphics2WithPicture()
 }
 
@@ -93,7 +101,7 @@ fun JFrame.makeUseSkikoGraphics1WithPicture() {
         assert(EventQueue.isDispatchThread()) {
             "Current thread is not event dispatch thread: ${Thread.currentThread()}"
         }
-        val pictureRecorder = org.jetbrains.skia.PictureRecorder()
+        val pictureRecorder = PictureRecorder()
         val width = surfaceData.width.toFloat()
         val height = surfaceData.height.toFloat()
         assert(width > 0 && height > 0) { "Surface data width and height must be positive: $width, $height" }
@@ -118,14 +126,19 @@ fun JFrame.makeUseSkikoGraphics1WithPicture() {
 }
 
 fun JFrame.makeUseSkikoGraphics2WithSurface() {
+    var surface: Surface? = null
     overrideGraphics2D { surfaceData, fg, bg, font ->
-        val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
-        (surfaceData as? MTLSurfaceData)?.let {
-            val skikoGraphics2D = SkiaGraphics2D(surfaceData.width, surfaceData.height)
+        if (surfaceData is MTLSurfaceData) {
+            if (surface == null || surface!!.width != surfaceData.width || surface!!.height != surfaceData.height) {
+                surface = Surface.makeRasterN32Premul(surfaceData.width, surfaceData.height)
+            }
+            val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
+            val skikoGraphics2D = SkiaGraphics2D(surface)
             skikoGraphics2D.onDispose = {
+                val image = skikoGraphics2D.getSurface().makeImageSnapshot()
                 withSkiaCanvas(sunGraphics2D) { canvas, directContext, scale ->
                     //canvas.clear(org.jetbrains.skia.Color.MAGENTA)
-                    canvas.drawImage(skikoGraphics2D.getSurface().makeImageSnapshot(), 0f, 0f)
+                    canvas.drawImage(image, 0f, 0f)
                 }
             }
             skikoGraphics2D.transform(sunGraphics2D.transform)
@@ -134,6 +147,8 @@ fun JFrame.makeUseSkikoGraphics2WithSurface() {
             skikoGraphics2D.paint = fg
             skikoGraphics2D.font = font
             skikoGraphics2D
+        } else {
+            null
         }
     }
     disableDoubleBuffering()
@@ -152,7 +167,7 @@ fun JFrame.makeUseSkikoGraphics2WithPicture() {
         assert(EventQueue.isDispatchThread()) {
             "Current thread is not event dispatch thread: ${Thread.currentThread()}"
         }
-        val pictureRecorder = org.jetbrains.skia.PictureRecorder()
+        val pictureRecorder = PictureRecorder()
         val width = surfaceData.width.toFloat()
         val height = surfaceData.height.toFloat()
         assert(width > 0 && height > 0) { "Surface data width and height must be positive: $width, $height" }

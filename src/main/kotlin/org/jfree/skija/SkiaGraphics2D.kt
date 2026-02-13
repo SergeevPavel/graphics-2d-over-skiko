@@ -255,12 +255,12 @@ class SkiaGraphics2D : Graphics2D /*, ConstrainableGraphics */ {
      * @param width  the width.
      * @param height  the height.
      */
-    constructor(width: Int, height: Int) {
+    constructor(surface: Surface) {
         Logger.debug { "SkijaGraphics2D($width, $height)" }
-        this.width = width
-        this.height = height
-        this.surface = Surface.makeRasterN32Premul(width, height)
-        init(surface!!.canvas)
+        this.width = surface.width
+        this.height = surface.height
+        this.surface = surface
+        init(surface.canvas)
     }
 
     /**
@@ -1382,11 +1382,12 @@ class SkiaGraphics2D : Graphics2D /*, ConstrainableGraphics */ {
      * @param dy  the delta y.
      */
     override fun copyArea(x: Int, y: Int, width: Int, height: Int, dx: Int, dy: Int) {
-        Logger.debug { "copyArea($x, $y, $width, $height, $dx, $dy)" }
-        // todo [pavel.sergeev] is it correct?
-        val s = this.surface!!
-        val snapshot = s.makeImageSnapshot(IRect.makeXYWH(x, y, width, height))!!
-        canvas!!.drawImage(snapshot, (x + dx).toFloat(), (y + dy).toFloat())
+        surface?.makeImageSnapshot(x * 2, y * 2, (x + width) * 2, (y + height) * 2)?.let { imageSnapshot ->
+            canvas?.drawImage(imageSnapshot, ((x + dx).toFloat()) * 2, ((y + dy).toFloat()) * 2)
+        }
+//        val bitmap = Bitmap().apply { allocN32Pixels(width, height) }
+//        canvas?.readPixels(bitmap, x, y)
+//        canvas?.writePixels(bitmap, x + dx, y + dy)
     }
 
     /**
@@ -1800,7 +1801,10 @@ class SkiaGraphics2D : Graphics2D /*, ConstrainableGraphics */ {
             g2.dispose()
         }
         convertToSkijaImage(buffered).use { skijaImage ->
-            this.canvas!!.drawImageRect(skijaImage, Rect(x.toFloat(), y.toFloat(), (x + width).toFloat(), (y + height).toFloat()))
+            this.canvas!!.drawImageRect(
+                skijaImage,
+                Rect(x.toFloat(), y.toFloat(), (x + width).toFloat(), (y + height).toFloat())
+            )
         }
         return true
     }

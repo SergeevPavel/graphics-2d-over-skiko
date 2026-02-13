@@ -14,10 +14,15 @@ fun swingSample() {
             makeUseSkikoGraphics()
             defaultCloseOperation = JFrame.EXIT_ON_CLOSE
             setSize(400, 200)
-            contentPane.add(createUiPanel())
+//            contentPane.add(createUiPanel())
+            contentPane.add(createScrollPanel())
             isVisible = true
         }
     }
+}
+
+fun createScrollPanel(): JScrollPane {
+    return JScrollPane(createUiPanel())
 }
 
 fun createUiPanel(): JPanel {

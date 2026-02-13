@@ -2,6 +2,7 @@
 package org.example
 
 import org.example.graphics2d.LoggingGraphics2D
+import org.jetbrains.skia.Paint
 import withSkiaCanvas
 import sun.java2d.SunGraphics2D
 import java.awt.Dimension
@@ -38,7 +39,7 @@ fun skikoSpinner(): JComponent {
                 val cx = 200 //width / 2f + 50f
                 val cy = 200 //height / 2f + 50f
                 val r = minOf(cx, cy) - 2f
-                val paint = org.jetbrains.skia.Paint().apply {
+                val paint = Paint().apply {
                     isAntiAlias = true
                 }
                 for (i in 0 until 8) {
