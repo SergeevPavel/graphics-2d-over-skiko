@@ -1,6 +1,6 @@
 package org.example
 
-import org.example.graphics2d.makeUseSkikoGraphics
+import makeUseSkikoGraphics
 import javax.swing.JFrame
 import kotlin.emptyArray
 

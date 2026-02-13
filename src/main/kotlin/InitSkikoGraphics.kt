@@ -1,14 +1,16 @@
 @file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
-package org.example.graphics2d
 
 import Logger
 import graphics2d.SkikoGraphics2D
+import org.example.graphics2d.LoggingGraphics2D
 import org.jetbrains.skia.ColorSpace
+import org.jetbrains.skia.Rect
 import org.jfree.skija.SkiaGraphics2D
 import sun.java2d.SunGraphics2D
 import sun.java2d.SurfaceData
 import sun.java2d.metal.MTLSurfaceData
 import java.awt.Color
+import java.awt.EventQueue
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
@@ -67,7 +69,9 @@ fun withSkiaCanvas(
 }
 
 fun JFrame.makeUseSkikoGraphics() {
+//    makeUseSkikoGraphics1WithPicture()
     makeUseSkikoGraphics2WithSurface()
+//    makeUseSkikoGraphics2WithPicture()
 }
 
 fun JFrame.makeUseSkikoGraphics1WithPicture() {
@@ -77,6 +81,10 @@ fun JFrame.makeUseSkikoGraphics1WithPicture() {
             Logger.debug { "Surface data width: ${surfaceData.width}, height: ${surfaceData.height}" }
         } ?: run {
             Logger.debug { "Unsupported surface data type: $surfaceData" }
+        }
+        if (!EventQueue.isDispatchThread()) return@overrideGraphics2D null
+        assert(EventQueue.isDispatchThread()) {
+            "Current thread is not event dispatch thread: ${Thread.currentThread()}"
         }
         val skikoGraphics2D = SkikoGraphics2D { x, y, picture ->
             withSkiaCanvas(sunGraphics2D) { canvas, directContext, scale ->
@@ -105,8 +113,36 @@ fun JFrame.makeUseSkikoGraphics2WithSurface() {
             val skikoGraphics2D = SkiaGraphics2D(surfaceData.width, surfaceData.height)
             skikoGraphics2D.onDispose = {
                 withSkiaCanvas(sunGraphics2D) { canvas, directContext, scale ->
-                    skikoGraphics2D.getSurface()
+                    //canvas.clear(org.jetbrains.skia.Color.MAGENTA)
                     canvas.drawImage(skikoGraphics2D.getSurface().makeImageSnapshot(), 0f, 0f)
+                }
+            }
+            skikoGraphics2D.transform(sunGraphics2D.transform)
+            skikoGraphics2D.color = fg
+            skikoGraphics2D.background = bg
+            skikoGraphics2D.paint = fg
+            skikoGraphics2D.font = font
+            skikoGraphics2D
+        }
+    }
+    disableDoubleBuffering()
+}
+
+fun JFrame.makeUseSkikoGraphics2WithPicture() {
+    overrideGraphics2D { surfaceData, fg, bg, font ->
+        val sunGraphics2D = SunGraphics2D(surfaceData, fg, bg, font)
+        (surfaceData as? MTLSurfaceData)?.let {
+            assert(EventQueue.isDispatchThread())
+            val pictureRecorder = org.jetbrains.skia.PictureRecorder()
+            val pictureCanvas = pictureRecorder.beginRecording(Rect.makeXYWH(0f, 0f, surfaceData.width.toFloat(), surfaceData.height.toFloat()), null)
+            val skikoGraphics2D = SkiaGraphics2D(pictureCanvas)
+            skikoGraphics2D.onDispose = {
+                assert(EventQueue.isDispatchThread())
+                val picture = pictureRecorder.finishRecordingAsPicture()
+                pictureRecorder.close()
+                withSkiaCanvas(sunGraphics2D) { canvas, directContext, scale ->
+                    //canvas.clear(org.jetbrains.skia.Color.MAGENTA)
+                    canvas.drawPicture(picture)
                 }
             }
             skikoGraphics2D.transform(sunGraphics2D.transform)
@@ -138,7 +174,8 @@ fun JFrame.makeUseLoggingGraphics() {
             }
         }
         counter += 1
-        val loggingGraphics2D = LoggingGraphics2D(delegate = skikoGraphics2D, "$counter")
+        val loggingGraphics2D =
+            LoggingGraphics2D(delegate = skikoGraphics2D, "$counter")
         loggingGraphics2D.color = fg
         loggingGraphics2D.background = bg
         loggingGraphics2D.paint = fg

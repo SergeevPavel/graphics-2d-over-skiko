@@ -1,7 +1,7 @@
 @file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
 package org.example
 
-import org.example.graphics2d.makeUseSkikoGraphics
+import makeUseSkikoGraphics
 import java.awt.*
 import javax.swing.*
 import kotlin.math.PI

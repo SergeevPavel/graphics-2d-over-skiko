@@ -1920,7 +1920,8 @@ class SkikoGraphics2D : Graphics2D, ConstrainableGraphics {
         originX = x
         originY = y
         pictureRecorder?.let {
-            val canvas = it.beginRecording(x.toFloat(), y.toFloat(), 2f * (x.toFloat() + w.toFloat()), 2f * (y.toFloat() + h.toFloat()))
+            // todo [pavel.sergeev] why multiply by two?
+            val canvas = it.beginRecording(Rect.makeXYWH(x.toFloat(), y.toFloat(), 2f * w.toFloat(), 2f *  h.toFloat()))
             Logger.debug { "Called beginRecording() on $it" }
             initCanvas(canvas)
         }

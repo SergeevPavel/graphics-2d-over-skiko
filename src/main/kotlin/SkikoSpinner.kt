@@ -2,7 +2,7 @@
 package org.example
 
 import org.example.graphics2d.LoggingGraphics2D
-import org.example.graphics2d.withSkiaCanvas
+import withSkiaCanvas
 import sun.java2d.SunGraphics2D
 import java.awt.Dimension
 import java.awt.Graphics

@@ -32,92 +32,39 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+@file:Suppress("JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
 package org.jfree.skija
 
+import Logger
 import dispatchIfNeeded
 import graphics2d.SkikoGraphicsConfiguration
-import org.jetbrains.skia.BlendMode
+import org.jetbrains.skia.*
 import org.jetbrains.skia.Canvas
-import org.jetbrains.skia.ColorAlphaType
-import org.jetbrains.skia.ColorType
-import org.jetbrains.skia.FilterTileMode
-import org.jetbrains.skia.FontMgr
-import org.jetbrains.skia.FontStyle
-import org.jetbrains.skia.GradientStyle
-import org.jetbrains.skia.ImageInfo
-import org.jetbrains.skia.Matrix33
-import org.jetbrains.skia.PaintMode
-import org.jetbrains.skia.PaintStrokeCap
-import org.jetbrains.skia.PaintStrokeJoin
-import org.jetbrains.skia.Path
-import org.jetbrains.skia.PathEffect
-import org.jetbrains.skia.PathFillMode
-import org.jetbrains.skia.Rect
-import org.jetbrains.skia.Shader
-import org.jetbrains.skia.Surface
-import org.jetbrains.skia.Typeface
-import java.awt.AlphaComposite
-import java.awt.BasicStroke
+import java.awt.*
 import java.awt.Color
-import java.awt.Composite
 import java.awt.Font
 import java.awt.FontMetrics
-import java.awt.GradientPaint
 import java.awt.Graphics
-import java.awt.Graphics2D
-import java.awt.GraphicsConfiguration
 import java.awt.Image
-import java.awt.LinearGradientPaint
-import java.awt.MultipleGradientPaint
 import java.awt.Paint
-import java.awt.RadialGradientPaint
-import java.awt.Rectangle
-import java.awt.RenderingHints
-import java.awt.Shape
-import java.awt.Stroke
 import java.awt.font.FontRenderContext
 import java.awt.font.GlyphVector
 import java.awt.font.TextLayout
-import java.awt.geom.AffineTransform
-import java.awt.geom.Arc2D
-import java.awt.geom.Area
-import java.awt.geom.Ellipse2D
-import java.awt.geom.GeneralPath
-import java.awt.geom.Line2D
-import java.awt.geom.NoninvertibleTransformException
-import java.awt.geom.Path2D
-import java.awt.geom.PathIterator
-import java.awt.geom.Rectangle2D
-import java.awt.geom.RoundRectangle2D
-import java.awt.image.BufferedImage
-import java.awt.image.BufferedImageOp
-import java.awt.image.ColorModel
-import java.awt.image.DataBufferInt
-import java.awt.image.ImageObserver
-import java.awt.image.RenderedImage
-import java.awt.image.WritableRaster
+import java.awt.geom.*
+import java.awt.image.*
 import java.awt.image.renderable.RenderableImage
 import java.text.AttributedCharacterIterator
-import java.util.Collections
-import java.util.Hashtable
-import java.util.Locale
+import java.util.*
 import java.util.function.Function
-import kotlin.collections.HashMap
-import kotlin.collections.MutableMap
-import kotlin.collections.MutableSet
-import kotlin.collections.contentEquals
-import kotlin.collections.contentToString
-import kotlin.collections.indices
 import kotlin.math.max
-import kotlin.text.StringBuilder
-import kotlin.text.contains
-import kotlin.text.lowercase
 
 /**
  * An implementation of the Graphics2D API that targets the Skija graphics API
  * (https://github.com/JetBrains/skija).
  */
-class SkiaGraphics2D : Graphics2D {
+// Swing treats the graphics differently when it's Constrainable
+// for us, it apparently led to miss-positioning the items
+class SkiaGraphics2D : Graphics2D /*, ConstrainableGraphics */ {
     /* members */
     /** Rendering hints.  */
     private val hints: RenderingHints = RenderingHints(
@@ -1435,8 +1382,11 @@ class SkiaGraphics2D : Graphics2D {
      * @param dy  the delta y.
      */
     override fun copyArea(x: Int, y: Int, width: Int, height: Int, dx: Int, dy: Int) {
-        // FIXME: implement this, low priority
-        Logger.error { "copyArea($x, $y, $width, $height, $dx, $dy) - NOT IMPLEMENTED" }
+        Logger.debug { "copyArea($x, $y, $width, $height, $dx, $dy)" }
+        // todo [pavel.sergeev] is it correct?
+        val s = this.surface!!
+        val snapshot = s.makeImageSnapshot(IRect.makeXYWH(x, y, width, height))!!
+        canvas!!.drawImage(snapshot, (x + dx).toFloat(), (y + dy).toFloat())
     }
 
     /**
@@ -2033,8 +1983,8 @@ class SkiaGraphics2D : Graphics2D {
     }
 
 //    override fun constrain(x: Int, y: Int, w: Int, h: Int) {
-//        translate(x * 2, y * 2) // todo [pavel.sergeev] is this correct?
-//        clipRect(0, 0, w, h)
+//        //translate(x, y) // todo [pavel.sergeev] is this correct?
+//        //clipRect(0, 0, w, h)
 //    }
 //
 //    override fun constrain(x: Int, y: Int, width: Int, height: Int, visibleRegion: Region?) {

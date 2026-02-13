@@ -6,7 +6,7 @@ package org.example
 fun main() {
     System.setProperty("sun.java2d.metal", "true")
     println("JDK ${System.getProperty("java.version")} (${System.getProperty("java.vendor")}), runtime: ${System.getProperty("java.runtime.name")} ${System.getProperty("java.runtime.version")}")
-    swingSample()
-//    runSwingMark()
+//    swingSample()
+    runSwingMark()
 //    SkiaTextureDemo.run(emptyArray())
 }
